@@ -7,7 +7,7 @@
 
   <style>
     /* ==========================================================================
-       1. COMPLETE OFFICIAL CODEMIRROR 5 CORE CSS (INLINED FOR ZERO-LATENCY)
+       1. COMPLETE OFFICIAL CODEMIRROR 5 CORE CSS (INLINED)
        ========================================================================== */
     .CodeMirror {
       font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
@@ -182,19 +182,16 @@
     }
     .CodeMirror-measure pre { position: static; }
 
-    /* Visual Indentation & Tab Guides (Python 4-space Alignment) */
+    /* Indentation Guides (VS Code / Godot style) */
+    .cm-indent-guide-line {
+      pointer-events: none;
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Tab Visual Character */
     .cm-tab {
       display: inline-block;
       text-decoration: inherit;
-      position: relative;
-    }
-    .cm-tab::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      border-left: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* VS Code Dark+ Syntax Colors */
@@ -258,7 +255,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", Consolas, monospace;
     }
 
-    /* Fixed App Container that adapts smoothly to window.visualViewport height */
+    /* Fixed App Container adapting to window.visualViewport height */
     #app-root {
       position: absolute;
       top: 0;
@@ -518,14 +515,14 @@
 
     /* Mobile Quick Keyboard & Symbol Accessory Bar */
     #mobile-accessory-bar {
-      height: 34px;
-      min-height: 34px;
-      max-height: 34px;
+      height: 36px;
+      min-height: 36px;
+      max-height: 36px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       overflow-x: auto;
       padding: 0 6px;
       scrollbar-width: none;
@@ -534,23 +531,26 @@
     }
     #mobile-accessory-bar::-webkit-scrollbar { display: none; }
 
+    /* Strict Keyboard Toggle Button */
     .btn-kb-toggle {
       background: var(--accent-blue);
       color: #ffffff;
       font-weight: 700;
-      font-size: 11px;
-      height: 26px;
-      padding: 0 8px;
+      font-size: 11.5px;
+      height: 28px;
+      padding: 0 10px;
       border: none;
       border-radius: 4px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       cursor: pointer;
       flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0, 122, 204, 0.4);
     }
     .btn-kb-toggle.active {
       background: #107c41;
+      box-shadow: 0 1px 4px rgba(16, 124, 65, 0.5);
     }
 
     .acc-key {
@@ -559,10 +559,10 @@
       color: var(--text-bright);
       font-family: "JetBrains Mono", Consolas, monospace;
       font-size: 11.5px;
-      height: 26px;
-      min-width: 28px;
+      height: 28px;
+      min-width: 30px;
       padding: 0 6px;
-      border-radius: 3px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -570,6 +570,14 @@
       flex-shrink: 0;
     }
     .acc-key:active { background: var(--accent-blue); color: #fff; }
+
+    .acc-key-action {
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      color: var(--accent-cyan);
+      font-weight: 600;
+      font-size: 11px;
+    }
 
     /* CodeMount Wrapper */
     #codemirror-wrapper {
@@ -836,24 +844,24 @@
 
       <!-- Main Code Editor Section -->
       <main id="editor-container">
-        <!-- Touch Accessory Bar with Keyboard Mode Toggle -->
+        <!-- Touch Accessory Bar with Strict Keyboard Mode Toggle & Selection Actions -->
         <div id="mobile-accessory-bar">
-          <button class="btn-kb-toggle" id="btn-toggle-keyboard" title="Tap to Toggle Virtual Keyboard">
+          <button class="btn-kb-toggle" id="btn-toggle-keyboard" title="Toggle Keyboard Strictly on Demand">
             <span>⌨️</span><span id="kb-btn-text">Type</span>
           </button>
+          <button class="acc-key acc-key-action" id="btn-select-all" title="Select All">Select All</button>
+          <button class="acc-key acc-key-action" id="btn-copy-sel" title="Copy Selection">Copy</button>
+          <button class="acc-key acc-key-action" id="btn-paste-sel" title="Paste">Paste</button>
           <button class="acc-key" data-insert="    ">Tab</button>
           <button class="acc-key" data-insert=":">:</button>
-          <button class="acc-key" data-insert="(">(</button>
-          <button class="acc-key" data-insert=")">)</button>
-          <button class="acc-key" data-insert="&quot;">&quot;</button>
-          <button class="acc-key" data-insert="'">'</button>
+          <button class="acc-key" data-pair="()">()</button>
+          <button class="acc-key" data-pair="[]">[]</button>
+          <button class="acc-key" data-pair="{}">{}</button>
+          <button class="acc-key" data-pair="&quot;&quot;">&quot;&quot;</button>
+          <button class="acc-key" data-pair="''">''</button>
           <button class="acc-key" data-insert="=">=</button>
           <button class="acc-key" data-insert="#">#</button>
           <button class="acc-key" data-insert="_">_</button>
-          <button class="acc-key" data-insert="[">[</button>
-          <button class="acc-key" data-insert="]">]</button>
-          <button class="acc-key" data-insert="{">{</button>
-          <button class="acc-key" data-insert="}">}</button>
           <button class="acc-key" data-insert="+">+</button>
           <button class="acc-key" data-insert="-">-</button>
           <button class="acc-key" data-insert="*">*</button>
@@ -863,7 +871,7 @@
           <button class="acc-key" data-insert="def ">def</button>
           <button class="acc-key" data-insert="return ">return</button>
           <button class="acc-key" data-insert="import ">import</button>
-          <button class="acc-key" data-insert="print()">print()</button>
+          <button class="acc-key" data-pair="print()">print()</button>
         </div>
 
         <!-- CodeMount Wrapper -->
@@ -927,7 +935,7 @@
   </div>
 
   <script>
-    // --- 1. DEFAULT STARTER FILES (RAVEN ASCII ART & PYTHON DEMO) ---
+    // --- 1. DEFAULT STARTER FILES ---
     const DEFAULT_RAVEN_CODE = `"""
 ═══════════════════════════════════════════════════════
    RayVen Development Environment (RDE) - Python Demo
@@ -986,7 +994,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
 `
     };
 
-    const STORAGE_KEY = "rde_virtual_files_v4";
+    const STORAGE_KEY = "rde_virtual_files_v5";
     let files = loadStoredFiles();
     let currentFileName = "main.py";
     if (!files[currentFileName]) {
@@ -998,8 +1006,15 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
     let isPyodideLoading = true;
     let isExecuting = false;
     let keyboardActive = false;
-    let lastTapTime = 0;
-    let lastTapCoords = null;
+
+    // Bracket & Quote Auto-Close Map
+    const BRACKET_PAIRS = {
+      "(": ")",
+      "[": "]",
+      "{": "}",
+      '"': '"',
+      "'": "'"
+    };
 
     function loadStoredFiles() {
       try {
@@ -1024,7 +1039,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 2. KEYBOARD TOGGLE & TOUCH HANDLING ---
+    // --- 2. STRICT KEYBOARD TOGGLE (BUTTON-ONLY SUMMON) ---
     function setKeyboardEnabled(enabled) {
       keyboardActive = enabled;
       const kbBtn = document.getElementById("btn-toggle-keyboard");
@@ -1034,7 +1049,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         kbText.textContent = enabled ? "Hide" : "Type";
       }
 
-      const input = editor ? editor.getInputField() : document.getElementById("code-editor-fallback");
+      const input = editor && editor.getInputField ? editor.getInputField() : document.getElementById("code-editor-fallback");
       if (!input) return;
 
       if (enabled) {
@@ -1051,14 +1066,14 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 3. EDITOR INITIALIZATION (Clean Monospace & VS Code Gutters) ---
+    // --- 3. EDITOR INITIALIZATION (Clean Monospace, Indent Guides, Gboard Backspace Fix) ---
     function initEditor() {
       const fallback = document.getElementById("code-editor-fallback");
       const initialCode = files[currentFileName] || DEFAULT_RAVEN_CODE;
       
       fallback.value = initialCode;
       fallback.style.display = "block";
-      fallback.setAttribute("inputmode", "none"); // Start in navigation mode
+      fallback.setAttribute("inputmode", "none");
 
       fallback.addEventListener("input", () => {
         files[currentFileName] = fallback.value;
@@ -1080,7 +1095,9 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         refresh: () => {},
         getInputField: () => fallback,
         getCursor: () => ({ line: 0, ch: 0 }),
-        scrollIntoView: () => {}
+        scrollIntoView: () => {},
+        somethingSelected: () => fallback.selectionStart !== fallback.selectionEnd,
+        getSelection: () => fallback.value.substring(fallback.selectionStart, fallback.selectionEnd)
       };
 
       upgradeToCodeMirror();
@@ -1104,8 +1121,13 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
           tabSize: 4,
           indentUnit: 4,
           indentWithTabs: false,
-          lineWrapping: false, // Horizontal scroll keeps Python indents crystal clear
-          gutters: ["CodeMirror-linenumbers"]
+          lineWrapping: false,
+          gutters: ["CodeMirror-linenumbers"],
+          extraKeys: {
+            "Backspace": function(cm) {
+              handleBackspace(cm);
+            }
+          }
         });
 
         fallback.style.display = "none";
@@ -1114,36 +1136,129 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
 
         const input = cmInstance.getInputField();
         if (input) {
-          // Default: cursor positioning & scroll without summoning software keyboard
+          // Strictly disable automatic keyboard on touch/selection
           input.setAttribute("inputmode", "none");
+
+          // BACKSPACE FIX FOR ANDROID GBOARD (Continuous deletion across lines)
+          input.addEventListener("beforeinput", (e) => {
+            if (e.inputType === "deleteContentBackward") {
+              if (cmInstance.somethingSelected()) {
+                e.preventDefault();
+                cmInstance.replaceSelection("");
+                return;
+              }
+              const cur = cmInstance.getCursor();
+              if (cur.ch === 0 && cur.line > 0) {
+                e.preventDefault();
+                const prevLine = cmInstance.getLine(cur.line - 1);
+                const prevLen = prevLine.length;
+                cmInstance.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
+                cmInstance.setCursor({ line: cur.line - 1, ch: prevLen });
+              }
+            }
+          });
+
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace" || e.keyCode === 8) {
+              if (cmInstance.somethingSelected()) {
+                e.preventDefault();
+                cmInstance.replaceSelection("");
+                return;
+              }
+              const cur = cmInstance.getCursor();
+              if (cur.ch === 0 && cur.line > 0) {
+                e.preventDefault();
+                const prevLine = cmInstance.getLine(cur.line - 1);
+                const prevLen = prevLine.length;
+                cmInstance.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
+                cmInstance.setCursor({ line: cur.line - 1, ch: prevLen });
+              }
+            }
+          });
         }
 
-        // Two-Tap Logic: First tap positions cursor, second tap near same location opens keyboard
+        // TOUCH HANDLING: Touch, selection and navigation strictly NEVER summon the keyboard!
         const cmEl = cmInstance.getWrapperElement();
-        cmEl.addEventListener("touchend", (e) => {
-          const touch = e.changedTouches ? e.changedTouches[0] : e;
-          const now = Date.now();
-          const coords = { x: touch.clientX, y: touch.clientY };
-
-          if (keyboardActive) {
-            // Already typing, keep keyboard active
-            return;
-          }
-
-          const isNear = lastTapCoords && Math.hypot(coords.x - lastTapCoords.x, coords.y - lastTapCoords.y) < 30;
-          const isDoubleTap = (now - lastTapTime < 500) && isNear;
-
-          lastTapTime = now;
-          lastTapCoords = coords;
-
-          if (isDoubleTap) {
-            // User intentionally wants to edit here!
-            setKeyboardEnabled(true);
-          } else {
-            // Single tap: position cursor without keyboard
-            if (input) input.setAttribute("inputmode", "none");
+        cmEl.addEventListener("touchstart", () => {
+          if (!keyboardActive && input) {
+            input.setAttribute("inputmode", "none");
           }
         }, { passive: true });
+
+        cmEl.addEventListener("touchend", () => {
+          if (!keyboardActive && input) {
+            input.setAttribute("inputmode", "none");
+          }
+        }, { passive: true });
+
+        // AUTO-CLOSE BRACKETS & QUOTES (With overtype and selection wrapping)
+        cmInstance.on("beforeChange", (cm, change) => {
+          if (change.origin === "+input" && change.text && change.text.length === 1) {
+            const typed = change.text[0];
+            const cur = cm.getCursor();
+            const line = cm.getLine(cur.line);
+            const nextChar = line ? line.charAt(cur.ch) : "";
+
+            // If next character is closing bracket/quote and user types it, skip over it
+            if ((typed === ")" || typed === "]" || typed === "}" || typed === '"' || typed === "'") && nextChar === typed) {
+              change.cancel();
+              cm.setCursor({ line: cur.line, ch: cur.ch + 1 });
+              return;
+            }
+
+            const closer = BRACKET_PAIRS[typed];
+            if (closer) {
+              if (cm.somethingSelected()) {
+                const sel = cm.getSelection();
+                change.text = [typed + sel + closer];
+                setTimeout(() => {
+                  const start = cm.getCursor("from");
+                  const end = cm.getCursor("to");
+                  cm.setSelection(start, end);
+                }, 0);
+              } else {
+                change.text = [typed + closer];
+                setTimeout(() => {
+                  cm.setCursor({ line: cur.line, ch: cur.ch + 1 });
+                }, 0);
+              }
+            }
+          }
+        });
+
+        // INDENTATION GUIDES (VS Code / Godot style vertical lines)
+        cmInstance.on("renderLine", (cm, line, elt) => {
+          const match = line.text.match(/^(\s+)/);
+          if (!match) return;
+          const numSpaces = match[1].replace(/\t/g, "    ").length;
+          const levels = Math.floor(numSpaces / 4);
+          if (levels === 0) return;
+
+          const guideContainer = document.createElement("span");
+          guideContainer.className = "cm-indent-guide-container";
+          guideContainer.style.position = "absolute";
+          guideContainer.style.left = "0";
+          guideContainer.style.top = "0";
+          guideContainer.style.bottom = "0";
+          guideContainer.style.pointerEvents = "none";
+          guideContainer.style.zIndex = "1";
+
+          for (let i = 1; i <= levels; i++) {
+            const guide = document.createElement("span");
+            guide.className = "cm-indent-guide-line";
+            guide.style.position = "absolute";
+            // 4ch per level + 8px gutter padding
+            guide.style.left = `calc(${ (i - 1) * 4 }ch + 8px)`;
+            guide.style.top = "0";
+            guide.style.bottom = "0";
+            guide.style.width = "1px";
+            guide.style.backgroundColor = "rgba(255, 255, 255, 0.16)";
+            guideContainer.appendChild(guide);
+          }
+
+          elt.style.position = "relative";
+          elt.insertBefore(guideContainer, elt.firstChild);
+        });
 
         cmInstance.on("change", () => {
           files[currentFileName] = cmInstance.getValue();
@@ -1151,13 +1266,25 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
           saveStoredFiles(files);
         });
 
-        cmInstance.on("cursorActivity", () => {
-          // Update status bar or cursor tracker if needed
-        });
-
         editor = cmInstance;
       } catch (e) {
         console.warn("CodeMirror upgrade skipped:", e);
+      }
+    }
+
+    function handleBackspace(cm) {
+      if (cm.somethingSelected()) {
+        cm.replaceSelection("");
+        return;
+      }
+      const cur = cm.getCursor();
+      if (cur.ch === 0 && cur.line > 0) {
+        const prevLine = cm.getLine(cur.line - 1);
+        const prevLen = prevLine.length;
+        cm.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
+        cm.setCursor({ line: cur.line - 1, ch: prevLen });
+      } else {
+        CodeMirror.commands.delCharBefore(cm);
       }
     }
 
@@ -1327,25 +1454,22 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.body.appendChild(s);
     }
 
-    // --- 8. SMOOTH VIEWPORT ADAPTATION (PREVENTS JUMPING OFFSCREEN ON KEYBOARD OPEN) ---
+    // --- 8. SMOOTH VIEWPORT ADAPTATION ---
     function adaptLayoutToViewport() {
       const vv = window.visualViewport;
       const appRoot = document.getElementById("app-root");
       
-      // Lock window scroll strictly to (0,0)
       window.scrollTo(0, 0);
       document.documentElement.scrollTop = 0;
       document.body.scrollTop = 0;
 
       if (vv && appRoot) {
-        // Size the container exactly to the visible height above the keyboard
         appRoot.style.height = `${vv.height}px`;
         appRoot.style.top = `${vv.offsetTop}px`;
       }
 
       if (editor && typeof editor.refresh === "function") {
         editor.refresh();
-        // Keep active cursor line directly in sight
         const cur = editor.getCursor();
         setTimeout(() => {
           if (editor && editor.scrollIntoView) {
@@ -1378,9 +1502,40 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.getElementById("btn-run-code").addEventListener("click", runCode);
       document.getElementById("btn-clear-output").addEventListener("click", clearOutput);
 
-      // Keyboard Toggle Button
+      // Strict Keyboard Toggle
       document.getElementById("btn-toggle-keyboard").addEventListener("click", () => {
         setKeyboardEnabled(!keyboardActive);
+      });
+
+      // Quick Selection Actions (Select All, Copy, Paste)
+      document.getElementById("btn-select-all").addEventListener("click", () => {
+        if (editor && editor.setSelection) {
+          editor.setSelection({ line: 0, ch: 0 }, { line: editor.lineCount(), ch: 0 });
+          editor.focus();
+        }
+      });
+
+      document.getElementById("btn-copy-sel").addEventListener("click", () => {
+        if (!editor) return;
+        const text = editor.somethingSelected() ? editor.getSelection() : editor.getValue();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text);
+          appendOutputText("[Copied to clipboard]\n", "info");
+        }
+      });
+
+      document.getElementById("btn-paste-sel").addEventListener("click", async () => {
+        if (!editor) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            const clipText = await navigator.clipboard.readText();
+            if (clipText) {
+              editor.replaceSelection(clipText);
+            }
+          }
+        } catch (e) {
+          console.warn("Paste error:", e);
+        }
       });
 
       const bottomPanel = document.getElementById("bottom-panel");
@@ -1424,14 +1579,71 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Accessory Keys (insert without closing or popping keyboard unnecessarily)
-      document.querySelectorAll(".acc-key").forEach(btn => {
+      // Accessory Keys (Inserting symbols & paired brackets)
+      document.querySelectorAll(".acc-key[data-insert]").forEach(btn => {
         btn.addEventListener("click", () => {
           const insertText = btn.getAttribute("data-insert");
           if (insertText && editor) {
             editor.replaceSelection(insertText);
             editor.focus();
           }
+        });
+      });
+
+      // Paired Bracket & Quote Keys from bar
+      document.querySelectorAll(".acc-key[data-pair]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const pair = btn.getAttribute("data-pair");
+          if (!pair || !editor) return;
+
+          if (editor.somethingSelected && editor.somethingSelected()) {
+            const sel = editor.getSelection();
+            if (pair === "()") editor.replaceSelection("(" + sel + ")");
+            else if (pair === "[]") editor.replaceSelection("[" + sel + "]");
+            else if (pair === "{}") editor.replaceSelection("{" + sel + "}");
+            else if (pair === '""') editor.replaceSelection('"' + sel + '"');
+            else if (pair === "''") editor.replaceSelection("'" + sel + "'");
+            else if (pair === "print()") editor.replaceSelection("print(" + sel + ")");
+          } else {
+            if (pair === "()") {
+              editor.replaceSelection("()");
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            } else if (pair === "[]") {
+              editor.replaceSelection("[]");
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            } else if (pair === "{}") {
+              editor.replaceSelection("{}");
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            } else if (pair === '""') {
+              editor.replaceSelection('""');
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            } else if (pair === "''") {
+              editor.replaceSelection("''");
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            } else if (pair === "print()") {
+              editor.replaceSelection("print()");
+              if (editor.getCursor && editor.setCursor) {
+                const c = editor.getCursor();
+                editor.setCursor({ line: c.line, ch: c.ch - 1 });
+              }
+            }
+          }
+          editor.focus();
         });
       });
 
@@ -1524,7 +1736,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
     });
 
     window.handleAndroidBack = function() {
-      // If keyboard is open, close it first
       if (keyboardActive) {
         setKeyboardEnabled(false);
         return true;
