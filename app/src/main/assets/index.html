@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>RDE - RayVen Development Environment</title>
-  
+
   <!-- CodeMirror CSS from CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
@@ -15,10 +15,10 @@
       --bg-editor: #1e1e1e;
       --bg-sidebar: #252526;
       --bg-activity: #333333;
-      --bg-titlebar: #323233;
+      --bg-titlebar: #2d2d2d;
       --bg-tab-active: #1e1e1e;
       --bg-tab-inactive: #2d2d2d;
-      --bg-panel: #1e1e1e;
+      --bg-panel: #181818;
       --bg-panel-header: #252526;
       --statusbar-bg: #007acc;
       --accent-blue: #007acc;
@@ -30,12 +30,8 @@
       --text-bright: #ffffff;
       --text-muted: #858585;
       --border-color: #3c3c3c;
-      --header-height: 48px;
-      --touch-bar-height: 42px;
-      --statusbar-height: 24px;
     }
 
-    /* Matrix Theme Overrides */
     body.matrix-theme {
       --bg-dark: #050b05;
       --bg-editor: #050b05;
@@ -44,7 +40,7 @@
       --bg-titlebar: #081108;
       --bg-tab-active: #050b05;
       --bg-tab-inactive: #0c180c;
-      --bg-panel: #050b05;
+      --bg-panel: #030803;
       --bg-panel-header: #0a140a;
       --statusbar-bg: #008f11;
       --accent-blue: #00ff41;
@@ -67,18 +63,18 @@
       user-select: text;
     }
 
-    body {
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", Consolas, monospace;
       background-color: var(--bg-dark);
       color: var(--text-main);
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
-    /* Top Progress Neon Bar */
+    /* Top Pyodide Loading Bar */
     #pyodide-loader-bar {
       position: absolute;
       top: 0;
@@ -87,26 +83,28 @@
       height: 3px;
       z-index: 1000;
       background: transparent;
-      overflow: hidden;
+      pointer-events: none;
     }
 
     #pyodide-loader-fill {
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #007acc, #00e5ff, #23d18b);
-      box-shadow: 0 0 10px #00e5ff, 0 0 20px #00e5ff;
+      box-shadow: 0 0 10px #00e5ff;
       transition: width 0.3s ease, opacity 0.5s ease;
     }
 
-    /* Top Header */
+    /* 1. Header (fixed height ~48px) */
     header {
-      height: var(--header-height);
+      height: 48px;
+      min-height: 48px;
+      max-height: 48px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 8px;
+      padding: 0 10px;
       z-index: 50;
       flex-shrink: 0;
     }
@@ -114,27 +112,27 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .icon-btn {
       background: none;
       border: none;
       color: var(--text-main);
-      padding: 8px;
-      min-width: 44px;
-      min-height: 44px;
+      padding: 6px;
+      min-width: 36px;
+      min-height: 36px;
       border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 15px;
       transition: background 0.15s, color 0.15s;
     }
 
     .icon-btn:active {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.15);
       color: var(--text-bright);
     }
 
@@ -142,232 +140,223 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      padding-left: 2px;
     }
 
     .logo-badge {
       font-weight: 800;
       font-size: 14px;
       letter-spacing: 0.5px;
-      background: linear-gradient(135deg, #00e5ff, #007acc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--accent-cyan);
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
     }
 
     .logo-sub {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-muted);
-      border: 1px solid var(--border-color);
-      padding: 1px 4px;
-      border-radius: 4px;
+      border-left: 1px solid var(--border-color);
+      padding-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    /* Top Tabs */
+    /* Active File Tabs */
     .tabs-bar {
       display: flex;
       align-items: center;
+      gap: 4px;
       overflow-x: auto;
-      max-width: 45%;
       height: 100%;
-      scrollbar-width: none;
+      flex: 1;
+      padding: 0 12px;
     }
-    .tabs-bar::-webkit-scrollbar { display: none; }
 
     .file-tab {
+      background-color: var(--bg-tab-inactive);
+      color: var(--text-muted);
+      font-size: 12px;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 4px 4px 0 0;
       display: flex;
       align-items: center;
       gap: 6px;
+      cursor: pointer;
+      border-top: 2px solid transparent;
+      border-right: 1px solid var(--border-color);
+      border-left: 1px solid var(--border-color);
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .file-tab.active {
       background-color: var(--bg-tab-active);
       color: var(--text-bright);
-      padding: 6px 12px;
-      height: 36px;
       border-top: 2px solid var(--accent-blue);
-      border-right: 1px solid var(--border-color);
-      font-size: 13px;
-      white-space: nowrap;
-      border-radius: 4px 4px 0 0;
     }
 
-    .file-tab.unsaved::after {
-      content: "●";
-      font-size: 10px;
-      color: var(--accent-cyan);
-    }
-
-    /* Quick Action Buttons */
+    /* Quick Action Bar */
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .btn-run {
-      background: linear-gradient(135deg, #23d18b, #1b9e67);
-      color: #0b2216;
+      background: linear-gradient(135deg, #107c41, #23d18b);
+      color: #ffffff;
       border: none;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 0 14px;
-      height: 36px;
-      min-width: 80px;
       border-radius: 6px;
+      height: 34px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 0 10px rgba(35, 209, 139, 0.4);
-      transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
+      box-shadow: 0 2px 8px rgba(35, 209, 139, 0.3);
+      transition: transform 0.1s, box-shadow 0.15s;
     }
 
     .btn-run:active {
       transform: scale(0.96);
-      filter: brightness(1.2);
     }
 
     .btn-run.running {
-      background: linear-gradient(135deg, #cca700, #967d00);
-      color: #fff;
-      box-shadow: 0 0 12px rgba(204, 167, 0, 0.5);
+      background: linear-gradient(135deg, #cc8500, #ffb300);
+      box-shadow: 0 2px 8px rgba(255, 179, 0, 0.4);
     }
 
     .btn-action {
       background: rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
       border: 1px solid var(--border-color);
-      font-size: 12px;
-      padding: 0 10px;
+      color: var(--text-main);
       height: 34px;
-      min-width: 44px;
+      min-width: 34px;
+      padding: 0 8px;
       border-radius: 6px;
       display: flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
       cursor: pointer;
     }
 
     .btn-action:active {
-      background: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.18);
       color: var(--text-bright);
     }
 
-    /* Main Workspace Layout */
-    #workspace {
-      display: flex;
+    /* 2. Middle Workspace (flex: 1; display: flex; min-height: 0; position: relative;) */
+    #middle-workspace {
       flex: 1;
+      display: flex;
+      min-height: 0;
+      min-width: 0;
       position: relative;
       overflow: hidden;
     }
 
-    /* Activity Bar */
+    /* Activity Bar (44px) */
     #activity-bar {
-      width: 48px;
+      width: 44px;
+      min-width: 44px;
       background-color: var(--bg-activity);
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-top: 8px;
-      gap: 8px;
+      padding-top: 6px;
+      gap: 6px;
       border-right: 1px solid var(--border-color);
       z-index: 45;
       flex-shrink: 0;
     }
 
     .activity-icon {
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text-muted);
-      border-radius: 8px;
+      border-radius: 6px;
       cursor: pointer;
       position: relative;
-      font-size: 20px;
     }
 
     .activity-icon.active {
       color: var(--text-bright);
+      background: rgba(255, 255, 255, 0.08);
     }
 
     .activity-icon.active::before {
       content: "";
       position: absolute;
       left: 0;
-      top: 10px;
-      bottom: 10px;
-      width: 3px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
       background-color: var(--accent-blue);
-      border-radius: 0 2px 2px 0;
     }
 
-    /* Left Sidebar Drawer */
-    #sidebar-drawer {
-      width: 270px;
-      max-width: 80vw;
+    /* Left Sidebar Drawer / Container (220px) */
+    #sidebar-container {
+      width: 220px;
+      min-width: 220px;
       background-color: var(--bg-sidebar);
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 48px;
       z-index: 40;
-      transform: translateX(-100%);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 4px 0 16px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      transition: width 0.2s ease, min-width 0.2s ease;
     }
 
-    #sidebar-drawer.open {
-      transform: translateX(0);
+    #sidebar-container.collapsed {
+      width: 0;
+      min-width: 0;
+      border-right: none;
+      display: none;
     }
 
     .sidebar-header {
-      padding: 12px 14px;
+      padding: 10px 12px;
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border-color);
-    }
-
-    .sidebar-header-actions {
-      display: flex;
-      gap: 4px;
+      flex-shrink: 0;
     }
 
     .sidebar-content {
       flex: 1;
       overflow-y: auto;
-      padding: 6px 0;
+      padding: 4px 0;
     }
 
-    /* File Tree Items */
     .file-tree-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 14px;
+      padding: 6px 12px;
       font-size: 13px;
       color: var(--text-main);
       cursor: pointer;
-      min-height: 40px;
+      min-height: 36px;
     }
 
-    .file-tree-item:active, .file-tree-item.active {
+    .file-tree-item:hover, .file-tree-item.active {
       background-color: rgba(255, 255, 255, 0.08);
       color: var(--text-bright);
     }
 
     .file-tree-item.active {
-      border-left: 2px solid var(--accent-blue);
+      border-left: 3px solid var(--accent-blue);
     }
 
     .file-item-left {
@@ -379,191 +368,38 @@
       white-space: nowrap;
     }
 
-    .file-icon {
-      font-size: 14px;
-    }
-
-    .file-icon.python { color: #3572A5; }
-    .file-icon.markdown { color: #519aba; }
-
     .file-item-del {
-      opacity: 0.5;
-      padding: 4px;
-    }
-    .file-item-del:active { opacity: 1; color: var(--accent-red); }
-
-    /* Extensions Marketplace */
-    .extension-card {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .ext-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .ext-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-bright);
-    }
-
-    .ext-desc {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.3;
-    }
-
-    .ext-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 4px;
-    }
-
-    .ext-badge {
-      font-size: 10px;
+      opacity: 0.4;
       padding: 2px 6px;
-      border-radius: 10px;
-      background: rgba(0, 122, 204, 0.2);
-      color: var(--accent-cyan);
-    }
-
-    /* Switch toggle */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 36px;
-      height: 20px;
-    }
-
-    .switch input { opacity: 0; width: 0; height: 0; }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #444;
-      transition: .2s;
-      border-radius: 20px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .2s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider { background-color: var(--accent-blue); }
-    input:checked + .slider:before { transform: translateX(16px); }
-
-    /* Settings UI */
-    .setting-row {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .setting-label { font-size: 13px; color: var(--text-bright); }
-    .setting-sub { font-size: 11px; color: var(--text-muted); }
-    .setting-control { display: flex; gap: 8px; margin-top: 4px; }
-    .setting-btn {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      padding: 4px 10px;
-      border-radius: 4px;
       font-size: 12px;
-      cursor: pointer;
-    }
-    .setting-btn.active {
-      background: var(--accent-blue);
-      color: white;
-      border-color: var(--accent-blue);
+      border-radius: 3px;
     }
 
-    /* Editor Container */
-    #editor-section {
+    .file-item-del:active {
+      opacity: 1;
+      background: var(--accent-red);
+      color: #fff;
+    }
+
+    /* Main Code Editor Container */
+    #editor-container {
       flex: 1;
       display: flex;
       flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
       background-color: var(--bg-editor);
-      position: relative;
       overflow: hidden;
     }
 
-    #codemirror-wrapper {
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* CodeMirror VS Code Dark+ Overrides */
-    .CodeMirror {
-      height: 100% !important;
-      font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
-      font-size: 14px;
-      line-height: 1.5;
-      background: var(--bg-editor) !important;
-      color: #d4d4d4 !important;
-    }
-
-    .CodeMirror-gutters {
-      background: var(--bg-editor) !important;
-      border-right: 1px solid #2d2d2d !important;
-      white-space: nowrap;
-    }
-
-    .CodeMirror-linenumber {
-      color: #858585 !important;
-      padding: 0 8px 0 4px !important;
-      font-size: 12px;
-    }
-
-    .CodeMirror-cursor {
-      border-left: 2px solid var(--accent-cyan) !important;
-    }
-
-    .CodeMirror-activeline-background {
-      background: rgba(255, 255, 255, 0.04) !important;
-    }
-
-    .CodeMirror-selected {
-      background: #264f78 !important;
-    }
-
-    /* Syntax Highlighting (VS Code Dark+) */
-    .cm-s-default .cm-keyword { color: #c586c0; font-weight: bold; }
-    .cm-s-default .cm-def { color: #dcdcaa; }
-    .cm-s-default .cm-variable { color: #9cdcfe; }
-    .cm-s-default .cm-variable-2 { color: #9cdcfe; }
-    .cm-s-default .cm-variable-3 { color: #4ec9b0; }
-    .cm-s-default .cm-property { color: #9cdcfe; }
-    .cm-s-default .cm-operator { color: #d4d4d4; }
-    .cm-s-default .cm-string { color: #ce9178; }
-    .cm-s-default .cm-string-2 { color: #ce9178; }
-    .cm-s-default .cm-number { color: #b5cea8; }
-    .cm-s-default .cm-comment { color: #6a9955; font-style: italic; }
-    .cm-s-default .cm-builtin { color: #4ec9b0; }
-    .cm-s-default .cm-tag { color: #569cd6; }
-
-    /* Touch Accessory Keyboard Bar */
+    /* Mobile Quick Accessory Keyboard Bar */
     #mobile-accessory-bar {
-      height: var(--touch-bar-height);
+      height: 36px;
+      min-height: 36px;
+      max-height: 36px;
       background-color: var(--bg-titlebar);
-      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       gap: 4px;
@@ -571,20 +407,20 @@
       padding: 0 6px;
       scrollbar-width: none;
       flex-shrink: 0;
-      z-index: 20;
+      z-index: 10;
     }
     #mobile-accessory-bar::-webkit-scrollbar { display: none; }
 
     .acc-key {
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border-color);
       color: var(--text-bright);
       font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 13px;
-      height: 32px;
-      min-width: 34px;
-      padding: 0 8px;
-      border-radius: 5px;
+      font-size: 12px;
+      height: 28px;
+      min-width: 32px;
+      padding: 0 6px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -594,20 +430,97 @@
 
     .acc-key:active {
       background: var(--accent-blue);
-      color: white;
+      color: #ffffff;
     }
 
-    /* Bottom Panel (Terminal / Output Console) */
+    /* CodeMirror Mount Wrapper */
+    #codemirror-wrapper {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      min-width: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .CodeMirror {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100% !important;
+      width: 100% !important;
+      font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
+      font-size: 13.5px;
+      line-height: 1.5;
+      background: var(--bg-editor) !important;
+      color: #d4d4d4 !important;
+    }
+
+    .CodeMirror-gutters {
+      background: var(--bg-editor) !important;
+      border-right: 1px solid #2d2d2d !important;
+    }
+
+    .CodeMirror-linenumber {
+      color: #858585 !important;
+      padding: 0 6px 0 4px !important;
+      font-size: 12px;
+    }
+
+    .CodeMirror-cursor {
+      border-left: 2px solid var(--accent-cyan) !important;
+    }
+
+    /* Fallback Textarea if CDN is loading */
+    #code-editor-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-editor);
+      color: #d4d4d4;
+      font-family: "JetBrains Mono", Consolas, monospace;
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding: 10px;
+      border: none;
+      outline: none;
+      resize: none;
+      box-sizing: border-box;
+      display: none;
+    }
+
+    /* 3. Bottom Console Panel (resizable / toggleable, default height ~140px) */
     #bottom-panel {
-      height: 220px;
-      min-height: 40px;
-      max-height: 80vh;
+      height: 140px;
+      min-height: 36px;
+      max-height: 60vh;
       background-color: var(--bg-panel);
       border-top: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       z-index: 30;
-      transition: height 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Panel Resizer Handle */
+    #panel-resizer {
+      height: 5px;
+      cursor: ns-resize;
+      background: transparent;
+      position: absolute;
+      top: -3px;
+      left: 0;
+      right: 0;
+      z-index: 35;
+    }
+    #panel-resizer:hover {
+      background: var(--accent-blue);
     }
 
     #bottom-panel.collapsed {
@@ -615,7 +528,7 @@
     }
 
     #bottom-panel.maximized {
-      height: 70vh !important;
+      height: 55vh !important;
     }
 
     .panel-header {
@@ -625,7 +538,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 8px;
+      padding: 0 10px;
       flex-shrink: 0;
     }
 
@@ -640,12 +553,11 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 700;
       color: var(--text-muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
-      text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
@@ -670,92 +582,70 @@
       color: #e0e0e0;
       white-space: pre-wrap;
       word-break: break-word;
-      line-height: 1.45;
+      line-height: 1.4;
     }
 
-    /* Output Stream Formatting */
-    .out-stdout { color: #cccccc; }
+    .out-stdout { color: #dcdcdc; }
     .out-stderr { color: var(--accent-red); font-weight: 600; }
     .out-success { color: var(--accent-green); font-weight: 600; }
     .out-info { color: var(--accent-cyan); }
-    .out-plugin { color: #ffca28; font-weight: 500; }
-    .out-banner { color: #00e5ff; }
+    .out-banner { color: #00e5ff; font-weight: bold; }
 
     /* Interactive Terminal (REPL) */
     #terminal-view {
       display: none;
       flex-direction: column;
       height: 100%;
+      padding: 6px 10px;
     }
 
     #repl-history {
       flex: 1;
       overflow-y: auto;
-      padding: 6px 0;
     }
 
     .repl-input-row {
       display: flex;
       align-items: center;
       gap: 6px;
-      border-top: 1px solid var(--border-color);
-      padding: 6px 0 0 0;
+      height: 32px;
       margin-top: 4px;
+      flex-shrink: 0;
     }
 
     .repl-prompt {
       color: var(--accent-cyan);
+      font-family: "JetBrains Mono", monospace;
       font-weight: bold;
     }
 
     #repl-input {
       flex: 1;
-      background: rgba(255, 255, 255, 0.05);
+      height: 28px;
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border-color);
-      color: var(--text-bright);
-      font-family: "JetBrains Mono", monospace;
-      font-size: 13px;
-      padding: 6px 8px;
       border-radius: 4px;
+      color: #ffffff;
+      padding: 0 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
       outline: none;
     }
 
-    #repl-input:focus {
-      border-color: var(--accent-blue);
-    }
-
-    /* Problems Tab */
-    #problems-view {
-      display: none;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto;
-    }
-
-    .problem-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
-      border-radius: 4px;
-      background: rgba(241, 76, 76, 0.1);
-      border-left: 3px solid var(--accent-red);
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    /* Status Bar */
+    /* 4. Status Bar (Fixed at the very bottom edge of screen, height: 24px) */
     #status-bar {
-      height: var(--statusbar-height);
+      height: 24px;
+      min-height: 24px;
+      max-height: 24px;
       background-color: var(--statusbar-bg);
-      color: white;
+      color: #ffffff;
       font-size: 11px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 8px;
-      flex-shrink: 0;
       z-index: 50;
+      flex-shrink: 0;
     }
 
     .status-left, .status-right {
@@ -767,46 +657,24 @@
     .status-item {
       display: flex;
       align-items: center;
-      gap: 4px;
-      cursor: pointer;
+      gap: 5px;
+      cursor: default;
     }
 
     .status-dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background-color: #cca700;
-      display: inline-block;
-      box-shadow: 0 0 4px #cca700;
+      background-color: #ffcc00;
     }
 
-    .status-dot.ready {
-      background-color: #23d18b;
-      box-shadow: 0 0 4px #23d18b;
-    }
-
-    .status-dot.running {
-      background-color: #00e5ff;
-      box-shadow: 0 0 6px #00e5ff;
-      animation: pulse 1s infinite alternate;
-    }
+    .status-dot.ready { background-color: #00ff88; }
+    .status-dot.running { background-color: #00e5ff; animation: pulse 1s infinite alternate; }
 
     @keyframes pulse {
-      from { transform: scale(0.8); opacity: 0.7; }
-      to { transform: scale(1.2); opacity: 1; }
+      from { opacity: 0.4; }
+      to { opacity: 1; }
     }
-
-    /* Backdrop for sidebar drawer on mobile */
-    #drawer-backdrop {
-      display: none;
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 35;
-      backdrop-filter: blur(2px);
-    }
-
-    #drawer-backdrop.open { display: block; }
   </style>
 </head>
 <body>
@@ -816,16 +684,16 @@
     <div id="pyodide-loader-fill"></div>
   </div>
 
-  <!-- Top Header Navigation Bar -->
+  <!-- 1. Header (fixed height ~48px) -->
   <header>
     <div class="header-left">
-      <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer Sidebar (Alt+B)" aria-label="Toggle Sidebar">
+      <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer Sidebar">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
 
       <div class="logo-container">
         <span class="logo-badge">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.75v7.6L12 19.3l-6-5.75v-7.6l6-3.75z"/>
           </svg>
           RDE
@@ -859,185 +727,40 @@
     </div>
   </header>
 
-  <!-- Workspace Container -->
-  <div id="workspace">
-    
-    <!-- Activity Bar -->
+  <!-- 2. Middle Workspace (flex: 1; display: flex; min-height: 0; position: relative;) -->
+  <div id="middle-workspace">
+
+    <!-- Activity Bar (44px) -->
     <div id="activity-bar">
       <div class="activity-icon active" id="act-explorer" title="Explorer">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
       </div>
-      <div class="activity-icon" id="act-extensions" title="Extensions Marketplace">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-      </div>
-      <div class="activity-icon" id="act-settings" title="Settings">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      <div class="activity-icon" id="act-theme" title="Toggle Theme (Default / Matrix)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
       </div>
     </div>
 
-    <!-- Backdrop when drawer is open -->
-    <div id="drawer-backdrop"></div>
-
-    <!-- Collapsible Sidebar Drawer -->
-    <div id="sidebar-drawer">
-      <!-- 1. EXPLORER PANE -->
-      <div id="pane-explorer" style="display: flex; flex-direction: column; height: 100%;">
-        <div class="sidebar-header">
-          <span>RAYVEN WORKSPACE</span>
-          <div class="sidebar-header-actions">
-            <button class="icon-btn" id="btn-new-file" title="New Python File" style="min-width:32px; min-height:32px; padding:4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-            </button>
-            <button class="icon-btn" id="btn-share-code" title="Share / Export Code" style="min-width:32px; min-height:32px; padding:4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-            </button>
-          </div>
-        </div>
-        <div class="sidebar-content" id="file-tree-container">
-          <!-- Files rendered via JS -->
+    <!-- Left Sidebar (220px) -->
+    <aside id="sidebar-container">
+      <div class="sidebar-header">
+        <span>EXPLORER</span>
+        <div style="display: flex; gap: 4px;">
+          <button class="icon-btn" id="btn-new-file" title="New File" style="min-width:28px; min-height:28px; padding:2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+          </button>
+          <button class="icon-btn" id="btn-reset-starter" title="Reset Starter Files" style="min-width:28px; min-height:28px; padding:2px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+          </button>
         </div>
       </div>
-
-      <!-- 2. EXTENSIONS MARKETPLACE PANE -->
-      <div id="pane-extensions" style="display: none; flex-direction: column; height: 100%;">
-        <div class="sidebar-header">
-          <span>EXTENSIONS & PLUGINS</span>
-          <span style="font-size:10px; color:var(--accent-cyan);">Community</span>
-        </div>
-        <div class="sidebar-content">
-          <!-- Demo Working Plugin -->
-          <div class="extension-card">
-            <div class="ext-header">
-              <span class="ext-title">⏱️ Execution Timer & Mem</span>
-              <label class="switch">
-                <input type="checkbox" id="ext-toggle-timer" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="ext-desc">Real-time latency metrics & memory statistics logged in status bar and output console.</div>
-            <div class="ext-footer">
-              <span class="ext-badge">Pre-installed Active</span>
-              <span style="font-size:10px; color:#aaa;">v1.0.0</span>
-            </div>
-          </div>
-
-          <!-- Matrix Cyberpunk Theme -->
-          <div class="extension-card">
-            <div class="ext-header">
-              <span class="ext-title">🟢 Matrix Theme</span>
-              <label class="switch">
-                <input type="checkbox" id="ext-toggle-matrix">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="ext-desc">Switch RDE into high-contrast cyberpunk emerald green theme instantly.</div>
-            <div class="ext-footer">
-              <span class="ext-badge">Theme</span>
-              <span style="font-size:10px; color:#aaa;">v2.4.1</span>
-            </div>
-          </div>
-
-          <!-- Python Auto-PEP8 -->
-          <div class="extension-card">
-            <div class="ext-header">
-              <span class="ext-title">⚡ Python Auto-PEP8</span>
-              <label class="switch">
-                <input type="checkbox" id="ext-toggle-pep8" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="ext-desc">Automated code style beautification and clean standard indentation.</div>
-            <div class="ext-footer">
-              <span class="ext-badge">Formatter</span>
-              <span style="font-size:10px; color:#aaa;">v1.2.0</span>
-            </div>
-          </div>
-
-          <!-- AI Code Assist -->
-          <div class="extension-card">
-            <div class="ext-header">
-              <span class="ext-title">🤖 AI Code Assist</span>
-              <label class="switch">
-                <input type="checkbox" id="ext-toggle-ai" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="ext-desc">Intelligent code snippets, boilerplate generators, and docstring hints.</div>
-            <div class="ext-footer">
-              <span class="ext-badge">Productivity</span>
-              <span style="font-size:10px; color:#aaa;">v0.9.5</span>
-            </div>
-          </div>
-
-          <!-- Git Client -->
-          <div class="extension-card">
-            <div class="ext-header">
-              <span class="ext-title">🌿 Git Client</span>
-              <label class="switch">
-                <input type="checkbox" id="ext-toggle-git" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="ext-desc">Local version snapshots, branch tracking, and commit diffs.</div>
-            <div class="ext-footer">
-              <span class="ext-badge">SCM</span>
-              <span style="font-size:10px; color:#aaa;">v1.5.0</span>
-            </div>
-          </div>
-        </div>
+      <div class="sidebar-content" id="file-tree-container">
+        <!-- Files populated dynamically -->
       </div>
+    </aside>
 
-      <!-- 3. SETTINGS PANE -->
-      <div id="pane-settings" style="display: none; flex-direction: column; height: 100%;">
-        <div class="sidebar-header">
-          <span>RDE CONFIGURATION</span>
-        </div>
-        <div class="sidebar-content">
-          <div class="setting-row">
-            <span class="setting-label">Editor Font Size</span>
-            <span class="setting-sub">Touch-friendly code scale</span>
-            <div class="setting-control">
-              <button class="setting-btn" data-size="12">12px</button>
-              <button class="setting-btn active" data-size="14">14px</button>
-              <button class="setting-btn" data-size="16">16px</button>
-              <button class="setting-btn" data-size="18">18px</button>
-            </div>
-          </div>
-
-          <div class="setting-row">
-            <span class="setting-label">Tab Indentation</span>
-            <span class="setting-sub">Python standard spaces</span>
-            <div class="setting-control">
-              <button class="setting-btn" data-tab="2">2 Spaces</button>
-              <button class="setting-btn active" data-tab="4">4 Spaces</button>
-            </div>
-          </div>
-
-          <div class="setting-row">
-            <span class="setting-label">Word Wrapping</span>
-            <span class="setting-sub">Soft-wrap long lines on mobile screens</span>
-            <label class="switch" style="margin-top:6px;">
-              <input type="checkbox" id="setting-wrap" checked>
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="setting-row" style="margin-top: 20px;">
-            <button class="setting-btn" id="btn-reset-workspace" style="color:var(--accent-red); width: 100%; padding: 8px;">
-              ↺ Reset Starter Workspace
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Center Editor Section -->
-    <div id="editor-section">
-      <div id="codemirror-wrapper">
-        <textarea id="code-editor" style="display: none;"></textarea>
-      </div>
-
-      <!-- Mobile Touch Accessory Bar -->
+    <!-- Main Code Editor Section -->
+    <main id="editor-container">
+      <!-- Touch Accessory Bar -->
       <div id="mobile-accessory-bar">
         <button class="acc-key" data-insert="    ">Tab</button>
         <button class="acc-key" data-insert=":">:</button>
@@ -1067,80 +790,78 @@
         <button class="acc-key" data-insert="print()">print()</button>
       </div>
 
-      <!-- Bottom Panel (Console / Terminal / Problems) -->
-      <div id="bottom-panel">
-        <div class="panel-header">
-          <div class="panel-tabs">
-            <div class="panel-tab active" id="ptab-output">OUTPUT</div>
-            <div class="panel-tab" id="ptab-terminal">TERMINAL (REPL)</div>
-            <div class="panel-tab" id="ptab-problems">PROBLEMS <span id="problems-count" style="font-size:10px; background:#444; padding:1px 5px; border-radius:8px; margin-left:2px;">0</span></div>
-          </div>
-          <div class="panel-actions">
-            <button class="icon-btn" id="btn-copy-output" title="Copy Output" style="min-width:32px; min-height:32px; padding:4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-            </button>
-            <button class="icon-btn" id="btn-expand-panel" title="Maximize / Restore" style="min-width:32px; min-height:32px; padding:4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-            </button>
-            <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:32px; min-height:32px; padding:4px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-          </div>
-        </div>
+      <!-- CodeMirror Wrapper -->
+      <div id="codemirror-wrapper">
+        <textarea id="code-editor-fallback" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      </div>
+    </main>
 
-        <!-- 1. Output View -->
-        <div class="panel-body" id="output-view">
-          <div class="out-info">════════════════════════════════════════════════════════════</div>
-          <div class="out-banner">⚡ RayVen Dev Environment (RDE) v1.0.0</div>
-          <div class="out-info">   Pyodide WebAssembly Python Engine Initializing...</div>
-          <div class="out-info">════════════════════════════════════════════════════════════</div>
-        </div>
+  </div>
 
-        <!-- 2. Terminal (REPL) View -->
-        <div class="panel-body" id="terminal-view">
-          <div id="repl-history">
-            <div class="out-info">Python 3.12 (Pyodide Wasm Interactive REPL)</div>
-            <div class="out-info">Type any Python statement and press Enter or Send:</div>
-          </div>
-          <div class="repl-input-row">
-            <span class="repl-prompt">&gt;&gt;&gt;</span>
-            <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256), print(primes)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-            <button class="btn-action" id="btn-repl-send" style="height:32px;">Send</button>
-          </div>
-        </div>
+  <!-- 3. Bottom Console Panel (resizable / toggleable, default height ~140px) -->
+  <div id="bottom-panel">
+    <div id="panel-resizer" title="Drag to resize console"></div>
+    <div class="panel-header">
+      <div class="panel-tabs">
+        <div class="panel-tab active" id="ptab-output">OUTPUT</div>
+        <div class="panel-tab" id="ptab-terminal">TERMINAL (REPL)</div>
+      </div>
+      <div class="panel-actions">
+        <button class="icon-btn" id="btn-copy-output" title="Copy Output" style="min-width:28px; min-height:28px; padding:2px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        </button>
+        <button class="icon-btn" id="btn-expand-panel" title="Maximize / Restore" style="min-width:28px; min-height:28px; padding:2px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+        </button>
+        <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:28px; min-height:28px; padding:2px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
 
-        <!-- 3. Problems View -->
-        <div class="panel-body" id="problems-view">
-          <div style="color:var(--text-muted); font-size:12px;">No problems detected in workspace files.</div>
-        </div>
+    <!-- Output Console View -->
+    <div class="panel-body" id="output-view">
+      <div class="out-info">════════════════════════════════════════════════════════════</div>
+      <div class="out-banner">⚡ RayVen Dev Environment (RDE) v1.0.0</div>
+      <div class="out-info">   Pyodide WebAssembly Python Engine Initializing...</div>
+      <div class="out-info">════════════════════════════════════════════════════════════</div>
+    </div>
+
+    <!-- Terminal (REPL) View -->
+    <div class="panel-body" id="terminal-view">
+      <div id="repl-history">
+        <div class="out-info">Python 3.12 (Interactive REPL)</div>
+        <div class="out-info">Type any Python statement and press Enter or Send:</div>
+      </div>
+      <div class="repl-input-row">
+        <span class="repl-prompt">&gt;&gt;&gt;</span>
+        <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256), print('Hello')..." autocomplete="off" spellcheck="false">
+        <button class="btn-action" id="btn-repl-send" style="height:28px; font-size:12px;">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Blue VS Code Status Bar -->
-  <div id="status-bar">
+  <!-- 4. Status Bar (Fixed at the very bottom edge of screen, height: 24px) -->
+  <footer id="status-bar">
     <div class="status-left">
-      <div class="status-item" id="sb-branch" title="Git Branch">
+      <div class="status-item">
         <span>🌿 main</span>
       </div>
-      <div class="status-item" id="sb-problems" title="Problems">
-        <span>⊗ 0 ⚠ 0</span>
-      </div>
-      <div class="status-item" id="sb-plugin-stat" title="Execution Stats (Plugin Hook)">
-        <span>⏱️ Exec: 0ms | 🧠 Mem: -- MB</span>
+      <div class="status-item" id="sb-plugin-stat">
+        <span>⏱️ Exec: 0ms</span>
       </div>
     </div>
     <div class="status-right">
-      <div class="status-item" id="sb-wasm-status" title="Pyodide Wasm Engine Status">
+      <div class="status-item" id="sb-wasm-status">
         <span class="status-dot" id="status-dot"></span>
         <span id="status-text">Loading Wasm...</span>
       </div>
       <div class="status-item">UTF-8</div>
-      <div class="status-item" id="sb-indent">Spaces: 4</div>
+      <div class="status-item">Spaces: 4</div>
     </div>
-  </div>
+  </footer>
 
-  <!-- CodeMirror and Pyodide Scripts -->
+  <!-- Scripts: CodeMirror and Pyodide -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
@@ -1148,18 +869,11 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
-
-  <!-- Pyodide CDN -->
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 
   <script>
-    /* ══════════════════════════════════════════════════════════════
-       RAYVEN DEVELOPMENT ENVIRONMENT (RDE) - CORE APPLICATION
-       ══════════════════════════════════════════════════════════════ */
-
-    // 1. STARTER TEMPLATES & VIRTUAL FILE SYSTEM
-    const DEFAULT_FILES = {
-      "main.py": `"""
+    // --- 1. DEFAULT STARTER FILES (RAVEN ASCII ART & PYTHON DEMO) ---
+    const DEFAULT_RAVEN_CODE = `"""
 ═══════════════════════════════════════════════════════
    RayVen Development Environment (RDE) - Starter Demo
    Powered by Pyodide WebAssembly Python Engine
@@ -1168,12 +882,11 @@
 import sys
 import math
 import time
-from collections import Counter
 
 # 1. ASCII Raven Art
 RAVEN_ART = r"""
         __
-       /\` ,\\__
+       /\\\\' ,\\__
       |    .0 )_
       \\__   _/  )
        /  \\    /
@@ -1186,337 +899,186 @@ RAVEN_ART = r"""
     ═══════════════════════════════════
 """
 
-def print_banner():
+def greet():
     print(RAVEN_ART)
-    print(f"🐍 Python Runtime : {sys.version.split()[0]}")
-    print(f"⚡ Architecture    : {sys.platform} (WebAssembly)")
-    print(f"⏱️  Local Clock    : {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print("-" * 50)
+    print(f"🐍 Python version: {sys.version.split()[0]}")
+    print("⚡ Real-time execution ready!")
+    print("─" * 45)
 
-def compute_prime_factors(limit: int = 100):
-    print(f"\\n[1] Calculating Prime Numbers up to {limit}...")
-    sieve = [True] * (limit + 1)
-    for p in range(2, int(math.isqrt(limit)) + 1):
-        if sieve[p]:
-            for i in range(p * p, limit + 1, p):
-                sieve[i] = False
-    primes = [p for p in range(2, limit + 1) if sieve[p]]
-    print(f"    Found {len(primes)} primes: {primes[:15]}...")
-    return primes
+greet()
 
-def fibonacci_golden_ratio(n: int = 25):
-    print(f"\\n[2] Fibonacci Sequence & Golden Ratio Approximation (N={n})...")
+# 2. Math & Algorithm Calculation
+print("\\n[Computation Demo]")
+numbers = [12, 45, 78, 23, 56, 89, 90, 34]
+print(f"Numbers: {numbers}")
+print(f"Sum: {sum(numbers)}, Max: {max(numbers)}, Mean: {sum(numbers)/len(numbers):.2f}")
+
+# Prime numbers generation
+primes = [n for n in range(2, 60) if all(n % d != 0 for d in range(2, int(math.isqrt(n)) + 1))]
+print(f"Primes up to 60: {primes}")
+
+print("\\n[Execution Complete] Tap ▶ RUN to re-run or edit code above!")
+`;
+
+    const DEFAULT_FILES = {
+      "main.py": DEFAULT_RAVEN_CODE,
+      "algorithms.py": `# Algorithms & Data Structures Demo
+def fibonacci(n):
     a, b = 0, 1
-    seq = [a, b]
-    for _ in range(n - 2):
+    result = []
+    for _ in range(n):
+        result.append(a)
         a, b = b, a + b
-        seq.append(b)
-    phi_approx = seq[-1] / seq[-2]
-    print(f"    F({n}) = {seq[-1]:,}")
-    print(f"    Golden Ratio Phi (est): {phi_approx:.9f}")
-    print(f"    Golden Ratio Phi (true): {(1 + math.sqrt(5)) / 2:.9f}")
+    return result
 
-def run_analytics_benchmark():
-    print("\\n[3] Standard Library Text Analytics Benchmark...")
-    sample_text = """
-    Once upon a midnight dreary, while I pondered, weak and weary,
-    Over many a quaint and curious volume of forgotten lore—
-    While I nodded, nearly napping, suddenly there came a tapping,
-    As of some one gently rapping, rapping at my chamber door.
-    “'Tis some visitor,” I muttered, “tapping at my chamber door—
-                Only this and nothing more.”
-    Quoth the Raven “Nevermore.”
-    """
-    words = [w.strip(".,—'\\"“”\\n").lower() for w in sample_text.split() if w.strip()]
-    counts = Counter(words)
-    top_words = counts.most_common(5)
-    print(f"    Total words analyzed: {len(words)}")
-    print(f"    Top 5 most frequent words:")
-    for word, cnt in top_words:
-        print(f"      • '{word}': {cnt} times")
-
-if __name__ == "__main__":
-    print_banner()
-    primes = compute_prime_factors(120)
-    fibonacci_golden_ratio(30)
-    run_analytics_benchmark()
-    print("\\n✨ Ready! Tap 'RUN' anytime or write your own scripts.")
+print("Fibonacci sequence (12 items):", fibonacci(12))
 `,
-      "algorithms.py": `"""
-QuickSort and Binary Search Demo in Python
-"""
-def quicksort(arr):
-    if len(arr) <= 1:
-        return arr
-    pivot = arr[len(arr) // 2]
-    left = [x for x in arr if x < pivot]
-    middle = [x for x in arr if x == pivot]
-    right = [x for x in arr if x > pivot]
-    return quicksort(left) + middle + quicksort(right)
-
-numbers = [64, 34, 25, 12, 22, 11, 90, 88, 45, 5, 77]
-print(f"Original: {numbers}")
-sorted_nums = quicksort(numbers)
-print(f"Sorted  : {sorted_nums}")
-`,
-      "README.md": `# RayVen Development Environment (RDE)
-A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
-
-### Features
-- **In-Browser Python**: Executes locally via Pyodide Wasm with 0 server dependencies.
-- **VS Code Dark+**: Familiar themes, keyboard shortcuts, and file explorer.
-- **Interactive Terminal**: REPL console for evaluating Python live expressions.
-- **Mobile Touch Bar**: Instant typing of syntax symbols without shifting keyboards.
-- **Plugin Architecture**: Extend with custom commands and hooks via \`window.RDE\`.
+      "notes.md": `# RayVen RDE Notes
+- Fullscreen immersive Python IDE
+- CodeMirror syntax highlighting
+- Pyodide WebAssembly offline-capable engine
+- Instant RUN with console feedback
 `
     };
 
-    // Load or initialize workspace from localStorage
-    function getStoredFiles() {
+    // State
+    const STORAGE_KEY = "rde_virtual_files_v2";
+    let files = loadStoredFiles();
+    let currentFileName = "main.py";
+    if (!files[currentFileName]) {
+      files[currentFileName] = DEFAULT_RAVEN_CODE;
+    }
+
+    let editor = null;
+    let pyodideInstance = null;
+    let isPyodideLoading = true;
+    let isExecuting = false;
+
+    function loadStoredFiles() {
       try {
-        const stored = localStorage.getItem("rde_files");
-        if (stored) return JSON.parse(stored);
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+            return parsed;
+          }
+        }
       } catch (e) {
-        console.error("Failed to read localStorage:", e);
+        console.warn("Storage load error:", e);
       }
       return { ...DEFAULT_FILES };
     }
 
-    function saveStoredFiles(files) {
+    function saveStoredFiles(f) {
       try {
-        localStorage.setItem("rde_files", JSON.stringify(files));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(f));
       } catch (e) {
-        console.error("Failed to save to localStorage:", e);
+        console.warn("Storage save error:", e);
       }
     }
 
-    let files = getStoredFiles();
-    let currentFileName = "main.py";
-    let isPyodideLoading = true;
-    let pyodideInstance = null;
-    let editor = null;
-    let isExecuting = false;
-
-    // 2. PLUGIN ARCHITECTURE (window.RDE)
-    window.RDE = {
-      version: "1.0.0",
-      plugins: {},
-      commands: {},
-      runHooks: [],
-      
-      registerPlugin: function(plugin) {
-        if (!plugin || !plugin.id) throw new Error("Plugin must have an id");
-        this.plugins[plugin.id] = plugin;
-        this.logger.info(`[RDE Plugin] Registered: ${plugin.name || plugin.id}`);
-        if (typeof plugin.init === "function") {
-          try {
-            plugin.init(this);
-          } catch (err) {
-            this.logger.error(`Error initializing plugin ${plugin.id}:`, err);
-          }
-        }
-      },
-
-      addCommand: function(id, label, action) {
-        this.commands[id] = { id, label, action };
-      },
-
-      addSidebarTab: function(id, title, icon, render) {
-        console.log(`Sidebar tab added: ${title}`);
-      },
-
-      onRunCode: function(callback) {
-        if (typeof callback === "function") {
-          this.runHooks.push(callback);
-        }
-      },
-
-      logger: {
-        log: function(...args) { console.log("[RDE]", ...args); },
-        info: function(...args) { console.info("[RDE]", ...args); },
-        warn: function(...args) { console.warn("[RDE]", ...args); },
-        error: function(...args) { console.error("[RDE]", ...args); }
-      },
-
-      getEditorValue: function() {
-        return editor ? editor.getValue() : "";
-      },
-
-      setEditorValue: function(val) {
-        if (editor) editor.setValue(val);
-      },
-
-      appendOutput: function(text, type = "stdout") {
-        appendOutputText(text, type);
-      },
-
-      clearOutput: function() {
-        clearOutputPanel();
-      },
-
-      updateStatusBar: function(text) {
-        const el = document.getElementById("sb-plugin-stat");
-        if (el) el.innerHTML = `<span>${text}</span>`;
-      },
-
-      getActiveFile: function() {
-        return currentFileName;
-      },
-
-      setActiveFile: function(name) {
-        switchToFile(name);
-      }
-    };
-
-    // 3. PRE-INSTALLED WORKING DEMO PLUGIN: "Execution Timer & Memory Stat"
-    window.RDE.registerPlugin({
-      id: "exec-timer-mem",
-      name: "Execution Timer & Memory Stat",
-      version: "1.0.0",
-      description: "Monitors Python execution duration & Wasm heap memory",
-      enabled: true,
-      init: function(rde) {
-        rde.logger.info("Initializing Execution Timer & Memory Stat plugin");
-        rde.onRunCode(async (event) => {
-          const toggleEl = document.getElementById("ext-toggle-timer");
-          if (toggleEl && !toggleEl.checked) return;
-
-          if (event.type === "start") {
-            rde.updateStatusBar("⏱️ Executing Python...");
-          } else if (event.type === "end") {
-            const durationMs = event.duration.toFixed(1);
-            let memStr = "32.4 MB";
-            if (window.performance && window.performance.memory) {
-              const memMb = (window.performance.memory.usedJSHeapSize / (1024 * 1024)).toFixed(1);
-              memStr = `${memMb} MB`;
-            } else if (pyodideInstance && pyodideInstance._module && pyodideInstance._module.HEAP8) {
-              const heapMb = (pyodideInstance._module.HEAP8.length / (1024 * 1024)).toFixed(1);
-              memStr = `${heapMb} MB (Wasm Heap)`;
-            }
-            rde.updateStatusBar(`⏱️ ${durationMs}ms | 🧠 ${memStr}`);
-            rde.appendOutput(`[Plugin: Timer & Memory] Run completed in ${durationMs} ms (Est. Memory: ${memStr})\n`, "plugin");
-          }
-        });
-      }
-    });
-
-    // 4. UI INITIALIZATION & EDITOR SETUP
+    // --- 2. EDITOR INITIALIZATION (BULLETPROOF MOUNTING) ---
     function initEditor() {
-      const textarea = document.getElementById("code-editor");
+      const wrapper = document.getElementById("codemirror-wrapper");
+      const fallback = document.getElementById("code-editor-fallback");
+      const initialCode = files[currentFileName] || DEFAULT_RAVEN_CODE;
+
       if (typeof CodeMirror !== "undefined") {
-        editor = CodeMirror(document.getElementById("codemirror-wrapper"), {
-          value: files[currentFileName] || "",
-          mode: "python",
-          theme: "default",
-          lineNumbers: true,
-          matchBrackets: true,
-          autoCloseBrackets: true,
-          foldGutter: true,
-          gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-          tabSize: 4,
-          indentUnit: 4,
-          lineWrapping: true,
-          styleActiveLine: true
-        });
+        try {
+          editor = CodeMirror(wrapper, {
+            value: initialCode,
+            mode: "python",
+            lineNumbers: true,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            tabSize: 4,
+            indentUnit: 4,
+            lineWrapping: true
+          });
 
-        editor.on("change", () => {
-          files[currentFileName] = editor.getValue();
-          saveStoredFiles(files);
-          validateSyntax(editor.getValue());
-          const tab = document.getElementById("tab-main");
-          if (tab) tab.classList.remove("unsaved");
-        });
-      } else {
-        // Fallback textarea if CodeMirror CDN hasn't finished yet
-        textarea.style.display = "block";
-        textarea.value = files[currentFileName] || "";
-        textarea.addEventListener("input", () => {
-          files[currentFileName] = textarea.value;
-          saveStoredFiles(files);
-        });
-        editor = {
-          getValue: () => textarea.value,
-          setValue: (v) => { textarea.value = v; },
-          replaceSelection: (text) => {
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(end);
-            textarea.selectionStart = textarea.selectionEnd = start + text.length;
-          },
-          focus: () => textarea.focus()
-        };
-      }
-    }
+          // Ensure CodeMirror fills the flex container completely
+          editor.setSize("100%", "100%");
+          setTimeout(() => editor.refresh(), 50);
+          setTimeout(() => editor.refresh(), 200);
 
-    // Syntax validation for Problems tab
-    function validateSyntax(code) {
-      const problemsContainer = document.getElementById("problems-view");
-      const countEl = document.getElementById("problems-count");
-      const sbProblems = document.getElementById("sb-problems");
-      
-      const lines = code.split("\n");
-      const issues = [];
-
-      lines.forEach((line, index) => {
-        const trimmed = line.trim();
-        // Check for common Python syntax traps: def or if without colon
-        if (/^(def|class|if|elif|else|for|while|try|except|finally)\b/.test(trimmed)) {
-          if (!trimmed.endsWith(":") && !trimmed.endsWith("\\") && !trimmed.includes("#")) {
-            issues.push({ line: index + 1, message: `Missing ':' at end of '${trimmed.split(' ')[0]}' statement` });
-          }
+          editor.on("change", () => {
+            files[currentFileName] = editor.getValue();
+            saveStoredFiles(files);
+          });
+          return;
+        } catch (err) {
+          console.error("CodeMirror init failed, using fallback:", err);
         }
+      }
+
+      // Fallback textarea if CodeMirror CDN is unavailable or loading
+      fallback.style.display = "block";
+      fallback.value = initialCode;
+      fallback.addEventListener("input", () => {
+        files[currentFileName] = fallback.value;
+        saveStoredFiles(files);
       });
 
-      countEl.textContent = issues.length;
-      sbProblems.innerHTML = `<span>${issues.length > 0 ? "⊗ " + issues.length : "⊗ 0"} ⚠ 0</span>`;
-
-      if (issues.length === 0) {
-        problemsContainer.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">No problems detected in ${currentFileName}.</div>`;
-      } else {
-        problemsContainer.innerHTML = issues.map(iss => `
-          <div class="problem-item" onclick="jumpToLine(${iss.line})">
-            <span>❌</span>
-            <span>Line ${iss.line}: ${iss.message}</span>
-          </div>
-        `).join("");
-      }
+      editor = {
+        getValue: () => fallback.value,
+        setValue: (v) => { fallback.value = v; },
+        replaceSelection: (text) => {
+          const start = fallback.selectionStart;
+          const end = fallback.selectionEnd;
+          const val = fallback.value;
+          fallback.value = val.substring(0, start) + text + val.substring(end);
+          fallback.selectionStart = fallback.selectionEnd = start + text.length;
+          fallback.focus();
+        },
+        focus: () => fallback.focus(),
+        refresh: () => {}
+      };
     }
 
-    window.jumpToLine = function(lineNum) {
-      if (editor && editor.setCursor) {
-        editor.setCursor(lineNum - 1, 0);
-        editor.focus();
-      }
-    };
+    // --- 3. CONSOLE OUTPUT HELPERS ---
+    const outputView = document.getElementById("output-view");
 
-    // 5. PYODIDE WASM INITIALIZATION
+    function appendOutputText(text, type = "stdout") {
+      const span = document.createElement("span");
+      span.className = `out-${type}`;
+      span.textContent = text;
+      outputView.appendChild(span);
+      outputView.scrollTop = outputView.scrollHeight;
+    }
+
+    function clearOutput() {
+      outputView.innerHTML = "";
+    }
+
+    // --- 4. PYODIDE WASM INITIALIZATION ---
     async function initPyodideWasm() {
       const fillBar = document.getElementById("pyodide-loader-fill");
       const statusDot = document.getElementById("status-dot");
       const statusText = document.getElementById("status-text");
 
-      fillBar.style.width = "30%";
-      statusText.textContent = "Loading Pyodide CDN...";
+      fillBar.style.width = "25%";
+      statusText.textContent = "Loading Pyodide...";
 
       try {
         if (typeof loadPyodide === "undefined") {
-          throw new Error("Pyodide script failed to load from CDN. Please check network connection.");
+          throw new Error("Pyodide script not yet available from CDN.");
         }
 
-        fillBar.style.width = "65%";
-        statusText.textContent = "Compiling Wasm Runtime...";
+        fillBar.style.width = "60%";
+        statusText.textContent = "Compiling Wasm...";
 
         pyodideInstance = await loadPyodide({
           indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"
         });
 
-        // Set stdout and stderr redirection
+        // Redirect stdout and stderr
         pyodideInstance.setStdout({
           batched: (msg) => {
             appendOutputText(msg + "\n", "stdout");
           }
         });
-
         pyodideInstance.setStderr({
           batched: (msg) => {
             appendOutputText(msg + "\n", "stderr");
@@ -1524,30 +1086,23 @@ A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
         });
 
         fillBar.style.width = "100%";
-        setTimeout(() => {
-          fillBar.style.opacity = "0";
-        }, 400);
+        setTimeout(() => { fillBar.style.opacity = "0"; }, 400);
 
         isPyodideLoading = false;
         statusDot.className = "status-dot ready";
-        statusText.textContent = "Python 3.12 (Pyodide Ready)";
-
-        appendOutputText("[Pyodide Engine Ready] Python 3.12 initialized with Wasm acceleration.\n", "success");
+        statusText.textContent = "Python 3.12 (Ready)";
+        appendOutputText("[Pyodide Engine Ready] Python 3.12 Wasm initialized.\n", "success");
       } catch (err) {
-        console.error("Pyodide init error:", err);
+        console.warn("Pyodide init error:", err);
         statusDot.style.backgroundColor = "var(--accent-red)";
-        statusText.textContent = "Wasm Engine Error";
-        appendOutputText(`[Error] Failed to initialize Pyodide Wasm: ${err.message}\n`, "stderr");
+        statusText.textContent = "Pyodide Offline";
+        appendOutputText(`[Notice] Pyodide Wasm: ${err.message}\n`, "info");
       }
     }
 
-    // 6. CODE EXECUTION ENGINE
+    // --- 5. CODE EXECUTION (▶ RUN) ---
     async function runCode() {
       if (isExecuting) return;
-      if (isPyodideLoading || !pyodideInstance) {
-        appendOutputText("[Notice] Pyodide Python engine is still initializing. Please wait a moment...\n", "plugin");
-        return;
-      }
 
       const code = editor.getValue();
       const runBtn = document.getElementById("btn-run-code");
@@ -1555,6 +1110,19 @@ A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
       const runLabel = document.getElementById("run-label");
       const statusDot = document.getElementById("status-dot");
       const statusText = document.getElementById("status-text");
+      const execStat = document.getElementById("sb-plugin-stat");
+
+      // Ensure bottom panel is opened if collapsed
+      const bottomPanel = document.getElementById("bottom-panel");
+      if (bottomPanel.classList.contains("collapsed")) {
+        bottomPanel.classList.remove("collapsed");
+      }
+      showPanelTab("output");
+
+      if (isPyodideLoading || !pyodideInstance) {
+        appendOutputText("[Notice] Pyodide Python engine is still initializing. Please wait a moment...\n", "info");
+        return;
+      }
 
       isExecuting = true;
       runBtn.classList.add("running");
@@ -1563,19 +1131,11 @@ A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
       statusDot.className = "status-dot running";
       statusText.textContent = "Executing...";
 
-      // Ensure bottom panel is visible and output tab active
-      showBottomPanel("output");
-
       appendOutputText(`\n>>> [Executing ${currentFileName}] ${new Date().toLocaleTimeString()} <<<\n`, "info");
 
-      // Notify plugin hooks (Start)
-      for (const hook of window.RDE.runHooks) {
-        try { hook({ type: "start", code }); } catch (e) { console.error(e); }
-      }
-
-      // Android Bridge Haptic trigger
-      if (window.AndroidBridge && typeof window.AndroidBridge.onCodeRunStarted === "function") {
-        window.AndroidBridge.onCodeRunStarted();
+      // Native haptic feedback via AndroidBridge
+      if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
+        try { window.AndroidBridge.vibrate(20); } catch (_) {}
       }
 
       const startTime = performance.now();
@@ -1588,341 +1148,258 @@ A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
         appendOutputText(`${err.message || err}\n`, "stderr");
       } finally {
         const endTime = performance.now();
-        const duration = endTime - startTime;
+        const duration = Math.round(endTime - startTime);
         isExecuting = false;
         runBtn.classList.remove("running");
         runIcon.textContent = "▶";
         runLabel.textContent = "RUN";
         statusDot.className = "status-dot ready";
-        statusText.textContent = "Python 3.12 (Pyodide Ready)";
+        statusText.textContent = "Python 3.12 (Ready)";
+        execStat.textContent = `⏱️ Exec: ${duration}ms`;
 
         if (!hasError) {
           appendOutputText(`[Done] Exited with code=0 in ${(duration / 1000).toFixed(3)}s\n`, "success");
         }
-
-        // Notify plugin hooks (End)
-        for (const hook of window.RDE.runHooks) {
-          try { hook({ type: "end", code, duration, memory: null, error: hasError }); } catch (e) { console.error(e); }
-        }
-
-        if (window.AndroidBridge && typeof window.AndroidBridge.onCodeRunFinished === "function") {
-          window.AndroidBridge.onCodeRunFinished();
-        }
       }
     }
 
-    // 7. OUTPUT & CONSOLE UTILITIES
-    function appendOutputText(text, type = "stdout") {
-      const outputView = document.getElementById("output-view");
-      const span = document.createElement("span");
-      span.className = `out-${type}`;
-      span.textContent = text;
-      outputView.appendChild(span);
-      outputView.scrollTop = outputView.scrollHeight;
-    }
-
-    function clearOutputPanel() {
-      const outputView = document.getElementById("output-view");
-      outputView.innerHTML = `<div class="out-info">Console cleared at ${new Date().toLocaleTimeString()}.</div>\n`;
-    }
-
-    // 8. INTERACTIVE TERMINAL (REPL)
-    async function executeReplCommand() {
-      const inputEl = document.getElementById("repl-input");
-      const historyEl = document.getElementById("repl-history");
-      const cmd = inputEl.value.trim();
-      if (!cmd) return;
-
-      inputEl.value = "";
-
-      const userRow = document.createElement("div");
-      userRow.innerHTML = `<span class="repl-prompt">&gt;&gt;&gt;</span> <span style="color:var(--text-bright);">${escapeHtml(cmd)}</span>`;
-      historyEl.appendChild(userRow);
-
-      if (!pyodideInstance || isPyodideLoading) {
-        const errRow = document.createElement("div");
-        errRow.className = "out-stderr";
-        errRow.textContent = "Error: Pyodide is not loaded yet.";
-        historyEl.appendChild(errRow);
-        historyEl.scrollTop = historyEl.scrollHeight;
-        return;
-      }
-
-      try {
-        const result = await pyodideInstance.runPythonAsync(cmd);
-        if (result !== undefined && result !== null) {
-          const resRow = document.createElement("div");
-          resRow.className = "out-success";
-          resRow.textContent = `${result}`;
-          historyEl.appendChild(resRow);
-        }
-      } catch (err) {
-        const errRow = document.createElement("div");
-        errRow.className = "out-stderr";
-        errRow.textContent = `${err.message || err}`;
-        historyEl.appendChild(errRow);
-      }
-
-      historyEl.scrollTop = historyEl.scrollHeight;
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    // 9. FILE TREE & WORKSPACE LOGIC
+    // --- 6. FILE EXPLORER MANAGEMENT ---
     function renderFileTree() {
       const container = document.getElementById("file-tree-container");
       container.innerHTML = "";
 
-      Object.keys(files).forEach((filename) => {
-        const isPython = filename.endsWith(".py");
-        const isActive = filename === currentFileName;
-
+      Object.keys(files).forEach(fileName => {
         const item = document.createElement("div");
-        item.className = `file-tree-item ${isActive ? "active" : ""}`;
-        item.innerHTML = `
-          <div class="file-item-left">
-            <span class="file-icon ${isPython ? "python" : "markdown"}">${isPython ? "🐍" : "📄"}</span>
-            <span>${filename}</span>
-          </div>
-          ${filename !== "main.py" ? `
-            <button class="file-item-del" data-del="${filename}" title="Delete file">✕</button>
-          ` : ""}
-        `;
+        item.className = `file-tree-item ${fileName === currentFileName ? "active" : ""}`;
 
-        item.addEventListener("click", (e) => {
-          if (e.target.closest(".file-item-del")) return;
-          switchToFile(filename);
-          closeSidebarDrawer();
-        });
+        const left = document.createElement("div");
+        left.className = "file-item-left";
+        const icon = fileName.endsWith(".py") ? "🐍" : "📄";
+        left.innerHTML = `<span>${icon}</span><span>${fileName}</span>`;
 
-        container.appendChild(item);
-      });
+        item.appendChild(left);
 
-      // Attach delete handlers
-      container.querySelectorAll(".file-item-del").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const target = btn.getAttribute("data-del");
-          if (confirm(`Delete '${target}'?`)) {
-            delete files[target];
-            saveStoredFiles(files);
-            if (currentFileName === target) {
-              switchToFile("main.py");
-            } else {
-              renderFileTree();
+        if (fileName !== "main.py") {
+          const del = document.createElement("span");
+          del.className = "file-item-del";
+          del.textContent = "✕";
+          del.title = "Delete file";
+          del.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(`Delete ${fileName}?`)) {
+              delete files[fileName];
+              saveStoredFiles(files);
+              if (currentFileName === fileName) {
+                switchToFile("main.py");
+              } else {
+                renderFileTree();
+              }
             }
-          }
-        });
+          };
+          item.appendChild(del);
+        }
+
+        item.onclick = () => switchToFile(fileName);
+        container.appendChild(item);
       });
     }
 
-    function switchToFile(filename) {
-      if (!files[filename]) return;
-      currentFileName = filename;
-      document.getElementById("tab-filename").textContent = filename;
-      if (editor) {
-        editor.setValue(files[filename]);
-        if (editor.clearHistory) editor.clearHistory();
-      }
+    function switchToFile(fileName) {
+      if (!files[fileName]) return;
+      currentFileName = fileName;
+      document.getElementById("tab-filename").textContent = fileName;
+      editor.setValue(files[fileName]);
+      if (editor.refresh) setTimeout(() => editor.refresh(), 50);
       renderFileTree();
     }
 
-    function addNewFile() {
-      const name = prompt("Enter new Python file name:", "script.py");
-      if (!name) return;
-      let finalName = name.trim();
-      if (!finalName.includes(".")) finalName += ".py";
-
-      if (files[finalName]) {
-        alert("A file with that name already exists.");
-        switchToFile(finalName);
-        return;
-      }
-
-      files[finalName] = `# ${finalName}\nprint("Hello from ${finalName}!")\n`;
-      saveStoredFiles(files);
-      switchToFile(finalName);
+    // --- 7. PANEL TABS & RESIZING ---
+    function showPanelTab(tabName) {
+      document.getElementById("ptab-output").classList.toggle("active", tabName === "output");
+      document.getElementById("ptab-terminal").classList.toggle("active", tabName === "terminal");
+      document.getElementById("output-view").style.display = tabName === "output" ? "block" : "none";
+      document.getElementById("terminal-view").style.display = tabName === "terminal" ? "flex" : "none";
     }
 
-    // 10. SIDEBAR DRAWER TOGGLES & TABS
-    const drawer = document.getElementById("sidebar-drawer");
-    const backdrop = document.getElementById("drawer-backdrop");
-
-    function openSidebarDrawer() {
-      drawer.classList.add("open");
-      backdrop.classList.add("open");
-    }
-
-    function closeSidebarDrawer() {
-      drawer.classList.remove("open");
-      backdrop.classList.remove("open");
-    }
-
-    function toggleSidebarDrawer() {
-      if (drawer.classList.contains("open")) {
-        closeSidebarDrawer();
-      } else {
-        openSidebarDrawer();
-      }
-    }
-
-    function switchSidebarPane(paneName) {
-      document.querySelectorAll(".activity-icon").forEach(el => el.classList.remove("active"));
-      document.getElementById(`act-${paneName}`).classList.add("active");
-
-      document.getElementById("pane-explorer").style.display = paneName === "explorer" ? "flex" : "none";
-      document.getElementById("pane-extensions").style.display = paneName === "extensions" ? "flex" : "none";
-      document.getElementById("pane-settings").style.display = paneName === "settings" ? "flex" : "none";
-
-      openSidebarDrawer();
-    }
-
-    // 11. BOTTOM PANEL TABS & CONTROLS
-    const bottomPanel = document.getElementById("bottom-panel");
-    const outputView = document.getElementById("output-view");
-    const terminalView = document.getElementById("terminal-view");
-    const problemsView = document.getElementById("problems-view");
-
-    function showBottomPanel(tabName) {
-      bottomPanel.classList.remove("collapsed");
-      document.querySelectorAll(".panel-tab").forEach(t => t.classList.remove("active"));
-
-      outputView.style.display = "none";
-      terminalView.style.display = "none";
-      problemsView.style.display = "none";
-
-      if (tabName === "output") {
-        document.getElementById("ptab-output").classList.add("active");
-        outputView.style.display = "block";
-      } else if (tabName === "terminal") {
-        document.getElementById("ptab-terminal").classList.add("active");
-        terminalView.style.display = "flex";
-      } else if (tabName === "problems") {
-        document.getElementById("ptab-problems").classList.add("active");
-        problemsView.style.display = "flex";
-      }
-    }
-
-    // 12. EVENT LISTENERS SETUP
-    document.addEventListener("DOMContentLoaded", () => {
+    // --- 8. EVENT LISTENERS & SETUP ---
+    window.addEventListener("DOMContentLoaded", () => {
       initEditor();
       renderFileTree();
       initPyodideWasm();
 
-      // Top action buttons
+      // Run button
       document.getElementById("btn-run-code").addEventListener("click", runCode);
-      document.getElementById("btn-clear-output").addEventListener("click", clearOutputPanel);
-      document.getElementById("btn-toggle-sidebar").addEventListener("click", toggleSidebarDrawer);
-      backdrop.addEventListener("click", closeSidebarDrawer);
 
+      // Clear output
+      document.getElementById("btn-clear-output").addEventListener("click", clearOutput);
+
+      // Toggle terminal / console
+      const bottomPanel = document.getElementById("bottom-panel");
       document.getElementById("btn-toggle-terminal").addEventListener("click", () => {
         bottomPanel.classList.toggle("collapsed");
-      });
-
-      // Activity bar icons
-      document.getElementById("act-explorer").addEventListener("click", () => switchSidebarPane("explorer"));
-      document.getElementById("act-extensions").addEventListener("click", () => switchSidebarPane("extensions"));
-      document.getElementById("act-settings").addEventListener("click", () => switchSidebarPane("settings"));
-
-      // New file & Share
-      document.getElementById("btn-new-file").addEventListener("click", addNewFile);
-      document.getElementById("btn-share-code").addEventListener("click", () => {
-        const code = editor.getValue();
-        if (window.AndroidBridge && typeof window.AndroidBridge.shareCode === "function") {
-          window.AndroidBridge.shareCode(currentFileName, code);
-        } else if (navigator.share) {
-          navigator.share({ title: currentFileName, text: code });
-        } else {
-          navigator.clipboard.writeText(code);
-          alert(`Code copied to clipboard: ${currentFileName}`);
-        }
-      });
-
-      // Panel tabs
-      document.getElementById("ptab-output").addEventListener("click", () => showBottomPanel("output"));
-      document.getElementById("ptab-terminal").addEventListener("click", () => showBottomPanel("terminal"));
-      document.getElementById("ptab-problems").addEventListener("click", () => showBottomPanel("problems"));
-
-      // Panel actions
-      document.getElementById("btn-copy-output").addEventListener("click", () => {
-        const text = outputView.innerText;
-        navigator.clipboard.writeText(text);
-        appendOutputText("\n[Output copied to clipboard]\n", "info");
-      });
-
-      document.getElementById("btn-expand-panel").addEventListener("click", () => {
-        bottomPanel.classList.toggle("maximized");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
       });
 
       document.getElementById("btn-close-panel").addEventListener("click", () => {
         bottomPanel.classList.add("collapsed");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
       });
 
-      // REPL Send
-      document.getElementById("btn-repl-send").addEventListener("click", executeReplCommand);
-      document.getElementById("repl-input").addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          executeReplCommand();
+      document.getElementById("btn-expand-panel").addEventListener("click", () => {
+        bottomPanel.classList.remove("collapsed");
+        bottomPanel.classList.toggle("maximized");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+      });
+
+      // Panel Tabs
+      document.getElementById("ptab-output").addEventListener("click", () => showPanelTab("output"));
+      document.getElementById("ptab-terminal").addEventListener("click", () => showPanelTab("terminal"));
+
+      // Copy output
+      document.getElementById("btn-copy-output").addEventListener("click", () => {
+        const text = outputView.innerText;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text);
+          appendOutputText("[Copied output to clipboard]\n", "info");
         }
       });
 
-      // Touch Accessory Keyboard Bar
-      document.querySelectorAll(".acc-key").forEach(btn => {
-        btn.addEventListener("click", (e) => {
+      // Interactive REPL Send
+      const replInput = document.getElementById("repl-input");
+      const replHistory = document.getElementById("repl-history");
+      const sendRepl = async () => {
+        const cmd = replInput.value.trim();
+        if (!cmd) return;
+        replInput.value = "";
+
+        const line = document.createElement("div");
+        line.innerHTML = `<span style="color:var(--accent-cyan); font-weight:bold;">&gt;&gt;&gt;</span> <span>${cmd}</span>`;
+        replHistory.appendChild(line);
+
+        if (pyodideInstance) {
+          try {
+            const res = await pyodideInstance.runPythonAsync(cmd);
+            if (res !== undefined) {
+              const resEl = document.createElement("div");
+              resEl.style.color = "#23d18b";
+              resEl.textContent = String(res);
+              replHistory.appendChild(resEl);
+            }
+          } catch (e) {
+            const errEl = document.createElement("div");
+            errEl.style.color = "var(--accent-red)";
+            errEl.textContent = e.message;
+            replHistory.appendChild(errEl);
+          }
+        }
+        replHistory.scrollTop = replHistory.scrollHeight;
+      };
+
+      document.getElementById("btn-repl-send").addEventListener("click", sendRepl);
+      replInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
           e.preventDefault();
+          sendRepl();
+        }
+      });
+
+      // Toggle Sidebar
+      const sidebar = document.getElementById("sidebar-container");
+      document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+      });
+
+      document.getElementById("act-explorer").addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+      });
+
+      // Toggle Theme
+      document.getElementById("act-theme").addEventListener("click", () => {
+        document.body.classList.toggle("matrix-theme");
+      });
+
+      // New File
+      document.getElementById("btn-new-file").addEventListener("click", () => {
+        const name = prompt("Enter new filename (e.g. script.py):");
+        if (name && name.trim()) {
+          const clean = name.trim();
+          if (!files[clean]) {
+            files[clean] = `# File: ${clean}\n`;
+            saveStoredFiles(files);
+            switchToFile(clean);
+          } else {
+            switchToFile(clean);
+          }
+        }
+      });
+
+      // Reset Starter Files
+      document.getElementById("btn-reset-starter").addEventListener("click", () => {
+        if (confirm("Reset workspace to default starter template?")) {
+          files = { ...DEFAULT_FILES };
+          saveStoredFiles(files);
+          switchToFile("main.py");
+          appendOutputText("[Workspace] Reset to starter template.\n", "info");
+        }
+      });
+
+      // Touch Accessory Bar Insert
+      document.querySelectorAll(".acc-key").forEach(btn => {
+        btn.addEventListener("click", () => {
           const insertText = btn.getAttribute("data-insert");
-          if (editor) {
+          if (insertText && editor) {
             editor.replaceSelection(insertText);
             editor.focus();
           }
         });
       });
 
-      // Matrix Theme Toggle
-      document.getElementById("ext-toggle-matrix").addEventListener("change", (e) => {
-        if (e.target.checked) {
-          document.body.classList.add("matrix-theme");
-          appendOutputText("[Matrix Theme] Cyberpunk aesthetic activated.\n", "success");
-        } else {
-          document.body.classList.remove("matrix-theme");
-          appendOutputText("[Theme] Restored VS Code Dark+.\n", "info");
-        }
+      // Panel Resizer Dragging
+      const resizer = document.getElementById("panel-resizer");
+      let isResizing = false;
+      let startY = 0;
+      let startHeight = 140;
+
+      const onPointerMove = (e) => {
+        if (!isResizing) return;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const delta = startY - clientY;
+        const newH = Math.max(36, Math.min(window.innerHeight * 0.7, startHeight + delta));
+        bottomPanel.style.height = `${newH}px`;
+        if (editor && editor.refresh) editor.refresh();
+      };
+
+      const onPointerUp = () => {
+        isResizing = false;
+        window.removeEventListener("mousemove", onPointerMove);
+        window.removeEventListener("mouseup", onPointerUp);
+        window.removeEventListener("touchmove", onPointerMove);
+        window.removeEventListener("touchend", onPointerUp);
+      };
+
+      const onPointerDown = (e) => {
+        isResizing = true;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        startHeight = bottomPanel.offsetHeight;
+        bottomPanel.classList.remove("collapsed");
+        bottomPanel.classList.remove("maximized");
+        window.addEventListener("mousemove", onPointerMove);
+        window.addEventListener("mouseup", onPointerUp);
+        window.addEventListener("touchmove", onPointerMove);
+        window.addEventListener("touchend", onPointerUp);
+      };
+
+      resizer.addEventListener("mousedown", onPointerDown);
+      resizer.addEventListener("touchstart", onPointerDown, { passive: true });
+
+      // Window resize refresh
+      window.addEventListener("resize", () => {
+        if (editor && editor.refresh) editor.refresh();
       });
 
-      // Reset workspace
-      document.getElementById("btn-reset-workspace").addEventListener("click", () => {
-        if (confirm("Reset workspace files to initial templates?")) {
-          files = { ...DEFAULT_FILES };
-          saveStoredFiles(files);
-          switchToFile("main.py");
-          renderFileTree();
-          closeSidebarDrawer();
-          appendOutputText("[Workspace] Reset to starter template.\n", "info");
-        }
-      });
-
-      // Settings font size
-      document.querySelectorAll(".setting-btn[data-size]").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.querySelectorAll(".setting-btn[data-size]").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-          const size = btn.getAttribute("data-size");
-          const cmEl = document.querySelector(".CodeMirror");
-          if (cmEl) cmEl.style.fontSize = `${size}px`;
-        });
-      });
-
-      // Settings word wrap
-      document.getElementById("setting-wrap").addEventListener("change", (e) => {
-        if (editor && editor.setOption) {
-          editor.setOption("lineWrapping", e.target.checked);
-        }
-      });
-
-      // Keyboard shortcuts
+      // Keyboard shortcuts: Ctrl+Enter or Cmd+Enter to Run
       window.addEventListener("keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           e.preventDefault();
@@ -1931,12 +1408,14 @@ A mobile-first VS Code Dark+ styled Python IDE powered by Pyodide WebAssembly.
       });
     });
 
-    // Expose close helper for Android BackHandler
+    // Android Back button helper
     window.handleAndroidBack = function() {
-      if (drawer.classList.contains("open")) {
-        closeSidebarDrawer();
+      const sidebar = document.getElementById("sidebar-container");
+      if (!sidebar.classList.contains("collapsed")) {
+        sidebar.classList.add("collapsed");
         return true;
       }
+      const bottomPanel = document.getElementById("bottom-panel");
       if (bottomPanel.classList.contains("maximized")) {
         bottomPanel.classList.remove("maximized");
         return true;

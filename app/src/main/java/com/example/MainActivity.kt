@@ -37,14 +37,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.VsCodeDarkBg
 
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        init {
+            try {
+                android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // True Immersive Fullscreen: hide status bar and navigation bar
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+        insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        insetsController.hide(WindowInsetsCompat.Type.systemBars())
 
         setContent {
             MyApplicationTheme {
@@ -73,7 +91,6 @@ fun RdeAppScreen(activity: Activity) {
         modifier = Modifier
             .fillMaxSize()
             .background(VsCodeDarkBg)
-            .systemBarsPadding()
             .imePadding()
             .testTag("rde_root_container")
     ) {
@@ -84,7 +101,6 @@ fun RdeAppScreen(activity: Activity) {
             factory = { context ->
                 WebView(context).apply {
                     setBackgroundColor(0xFF1E1E1E.toInt())
-                    setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                     webViewRef = this
 
                     settings.apply {
@@ -93,6 +109,7 @@ fun RdeAppScreen(activity: Activity) {
                         databaseEnabled = true
                         allowFileAccess = true
                         allowContentAccess = true
+                        javaScriptCanOpenWindowsAutomatically = true
                         @Suppress("DEPRECATION")
                         allowFileAccessFromFileURLs = true
                         @Suppress("DEPRECATION")
