@@ -84,6 +84,7 @@ fun RdeAppScreen(activity: Activity) {
             factory = { context ->
                 WebView(context).apply {
                     setBackgroundColor(0xFF1E1E1E.toInt())
+                    setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                     webViewRef = this
 
                     settings.apply {
