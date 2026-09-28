@@ -2,10 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>RDE - RayVen Development Environment</title>
 
   <style>
+    /* Complete Official CodeMirror 5 Core CSS Inlined */
+    .CodeMirror {
+      font-family: monospace;
+      height: 300px;
+      color: black;
+      direction: ltr;
+      position: relative;
+      overflow: hidden;
+      background: white;
+    }
+    .CodeMirror-lines { padding: 4px 0; cursor: text; min-height: 1px; }
+    .CodeMirror pre.CodeMirror-line, .CodeMirror pre.CodeMirror-line-like {
+      padding: 0 4px;
+      margin: 0;
+      white-space: pre;
+      word-wrap: normal;
+      line-height: inherit;
+      color: inherit;
+      z-index: 2;
+      position: relative;
+      overflow: visible;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-variant-ligatures: contextual;
+      font-variant-ligatures: contextual;
+    }
+    .CodeMirror-wrap pre.CodeMirror-line, .CodeMirror-wrap pre.CodeMirror-line-like {
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      word-break: normal;
+    }
+    .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
+      background-color: white;
+      position: absolute;
+      z-index: 6;
+      display: none;
+    }
+    .CodeMirror-gutters {
+      position: absolute;
+      left: 0;
+      top: 0;
+      min-height: 100%;
+      z-index: 3;
+      white-space: nowrap;
+    }
+    .CodeMirror-linenumbers { width: 1px; }
+    .CodeMirror-linenumber {
+      padding: 0 5px 0 5px;
+      min-width: 20px;
+      text-align: right;
+      color: #999;
+      white-space: nowrap;
+    }
+    .CodeMirror-cursor {
+      position: absolute;
+      pointer-events: none;
+      border-left: 2px solid black;
+      border-right: none;
+      width: 0;
+    }
+    .CodeMirror-scroll {
+      overflow: scroll !important;
+      margin-bottom: -50px; margin-right: -50px;
+      padding-bottom: 50px;
+      height: 100%;
+      outline: none;
+      position: relative;
+      box-sizing: content-box;
+    }
+    .CodeMirror-sizer {
+      position: relative;
+      border-right: 50px solid transparent;
+      box-sizing: content-box;
+    }
+
+    /* RDE Dark Palette */
     :root {
       --bg-dark: #1e1e1e;
       --bg-editor: #1e1e1e;
@@ -21,30 +96,10 @@
       --accent-cyan: #00e5ff;
       --accent-green: #23d18b;
       --accent-red: #f14c4c;
-      --accent-yellow: #cca700;
       --text-main: #cccccc;
       --text-bright: #ffffff;
       --text-muted: #858585;
       --border-color: #3c3c3c;
-    }
-
-    body.matrix-theme {
-      --bg-dark: #050b05;
-      --bg-editor: #050b05;
-      --bg-sidebar: #0a140a;
-      --bg-activity: #0f1c0f;
-      --bg-titlebar: #081108;
-      --bg-tab-active: #050b05;
-      --bg-tab-inactive: #0c180c;
-      --bg-panel: #030803;
-      --bg-panel-header: #0a140a;
-      --statusbar-bg: #008f11;
-      --accent-blue: #00ff41;
-      --accent-cyan: #00ff41;
-      --accent-green: #00ff41;
-      --text-main: #57ff6d;
-      --text-bright: #e0ffe5;
-      --border-color: #005a12;
     }
 
     * {
@@ -52,32 +107,36 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
     }
 
-    input, textarea, .CodeMirror {
-      user-select: text;
-    }
-
+    /* Guaranteed Viewport Anchoring (Fixes 0-Height Flex Collapse in Android WebView) */
     html, body {
-      height: 100%;
-      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", Consolas, monospace;
       background-color: var(--bg-dark);
       color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", Consolas, monospace;
       display: flex;
       flex-direction: column;
+      z-index: 1;
     }
 
-    /* Top Pyodide Loading Bar */
+    /* Top Pyodide Neon Bar */
     #pyodide-loader-bar {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 3px;
-      z-index: 1000;
+      z-index: 9999;
       background: transparent;
       pointer-events: none;
     }
@@ -86,21 +145,21 @@
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #007acc, #00e5ff, #23d18b);
-      box-shadow: 0 0 10px #00e5ff;
+      box-shadow: 0 0 8px #00e5ff;
       transition: width 0.3s ease, opacity 0.5s ease;
     }
 
-    /* 1. Header (fixed height 48px) */
+    /* 1. Header (44px) */
     header {
-      height: 48px;
-      min-height: 48px;
-      max-height: 48px;
+      height: 44px;
+      min-height: 44px;
+      max-height: 44px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
+      padding: 0 8px;
       z-index: 50;
       flex-shrink: 0;
     }
@@ -108,29 +167,23 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .icon-btn {
-      background: none;
-      border: none;
-      color: var(--text-main);
-      padding: 6px;
-      min-width: 36px;
-      min-height: 36px;
-      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-bright);
+      padding: 5px;
+      min-width: 32px;
+      min-height: 32px;
+      border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 15px;
-      transition: background 0.15s, color 0.15s;
     }
-
-    .icon-btn:active {
-      background: rgba(255, 255, 255, 0.15);
-      color: var(--text-bright);
-    }
+    .icon-btn:active { background: rgba(255, 255, 255, 0.2); }
 
     .logo-container {
       display: flex;
@@ -141,11 +194,10 @@
     .logo-badge {
       font-weight: 800;
       font-size: 14px;
-      letter-spacing: 0.5px;
       color: var(--accent-cyan);
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
     }
 
     .logo-sub {
@@ -154,10 +206,9 @@
       border-left: 1px solid var(--border-color);
       padding-left: 6px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
-    /* Active File Tabs */
+    /* Tabs Bar */
     .tabs-bar {
       display: flex;
       align-items: center;
@@ -165,15 +216,15 @@
       overflow-x: auto;
       height: 100%;
       flex: 1;
-      padding: 0 12px;
+      padding: 0 10px;
     }
 
     .file-tab {
       background-color: var(--bg-tab-inactive);
       color: var(--text-muted);
       font-size: 12px;
-      height: 32px;
-      padding: 0 12px;
+      height: 30px;
+      padding: 0 10px;
       border-radius: 4px 4px 0 0;
       display: flex;
       align-items: center;
@@ -182,7 +233,6 @@
       border-top: 2px solid transparent;
       border-right: 1px solid var(--border-color);
       border-left: 1px solid var(--border-color);
-      transition: background 0.15s;
       white-space: nowrap;
     }
 
@@ -192,19 +242,19 @@
       border-top: 2px solid var(--accent-blue);
     }
 
-    /* Quick Action Bar */
+    /* Header Actions */
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .btn-run {
       background: linear-gradient(135deg, #107c41, #23d18b);
       color: #ffffff;
       border: none;
-      border-radius: 6px;
-      height: 34px;
+      border-radius: 4px;
+      height: 32px;
       padding: 0 14px;
       display: flex;
       align-items: center;
@@ -212,52 +262,29 @@
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 2px 8px rgba(35, 209, 139, 0.3);
-      transition: transform 0.1s, box-shadow 0.15s;
+      box-shadow: 0 2px 6px rgba(35, 209, 139, 0.4);
     }
-
-    .btn-run:active {
-      transform: scale(0.96);
-    }
-
+    .btn-run:active { transform: scale(0.97); }
     .btn-run.running {
       background: linear-gradient(135deg, #cc8500, #ffb300);
-      box-shadow: 0 2px 8px rgba(255, 179, 0, 0.4);
-    }
-
-    .btn-action {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border-color);
-      color: var(--text-main);
-      height: 34px;
-      min-width: 34px;
-      padding: 0 8px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .btn-action:active {
-      background: rgba(255, 255, 255, 0.18);
-      color: var(--text-bright);
+      box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
     }
 
     /* 2. Middle Workspace */
     #middle-workspace {
-      flex: 1;
+      flex: 1 1 0%;
       display: flex;
       min-height: 0;
       min-width: 0;
       position: relative;
       overflow: hidden;
+      width: 100%;
     }
 
-    /* Activity Bar */
+    /* Activity Bar (40px) */
     #activity-bar {
-      width: 44px;
-      min-width: 44px;
+      width: 40px;
+      min-width: 40px;
       background-color: var(--bg-activity);
       display: flex;
       flex-direction: column;
@@ -270,54 +297,38 @@
     }
 
     .activity-icon {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text-muted);
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
-      position: relative;
     }
-
     .activity-icon.active {
       color: var(--text-bright);
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.1);
+      border-left: 2px solid var(--accent-blue);
     }
 
-    .activity-icon.active::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 8px;
-      bottom: 8px;
-      width: 2px;
-      background-color: var(--accent-blue);
-    }
-
-    /* Left Sidebar Drawer / Container (220px) */
+    /* Sidebar (190px) */
     #sidebar-container {
-      width: 220px;
-      min-width: 220px;
+      width: 190px;
+      min-width: 190px;
       background-color: var(--bg-sidebar);
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       z-index: 40;
       overflow: hidden;
-      transition: width 0.2s ease, min-width 0.2s ease;
     }
-
     #sidebar-container.collapsed {
-      width: 0;
-      min-width: 0;
-      border-right: none;
       display: none;
     }
 
     .sidebar-header {
-      padding: 10px 12px;
+      padding: 8px 10px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.8px;
@@ -339,47 +350,21 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 12px;
+      padding: 6px 10px;
       font-size: 13px;
       color: var(--text-main);
       cursor: pointer;
-      min-height: 36px;
+      min-height: 32px;
     }
-
-    .file-tree-item:hover, .file-tree-item.active {
+    .file-tree-item:active, .file-tree-item.active {
       background-color: rgba(255, 255, 255, 0.08);
       color: var(--text-bright);
-    }
-
-    .file-tree-item.active {
       border-left: 3px solid var(--accent-blue);
     }
 
-    .file-item-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .file-item-del {
-      opacity: 0.4;
-      padding: 2px 6px;
-      font-size: 12px;
-      border-radius: 3px;
-    }
-
-    .file-item-del:active {
-      opacity: 1;
-      background: var(--accent-red);
-      color: #fff;
-    }
-
-    /* Main Code Editor Container */
+    /* Editor Container */
     #editor-container {
-      flex: 1;
+      flex: 1 1 0%;
       display: flex;
       flex-direction: column;
       min-width: 0;
@@ -389,11 +374,11 @@
       overflow: hidden;
     }
 
-    /* Mobile Quick Accessory Keyboard Bar */
+    /* Mobile Accessory Bar */
     #mobile-accessory-bar {
-      height: 36px;
-      min-height: 36px;
-      max-height: 36px;
+      height: 32px;
+      min-height: 32px;
+      max-height: 32px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -412,26 +397,22 @@
       border: 1px solid var(--border-color);
       color: var(--text-bright);
       font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 12px;
-      height: 28px;
-      min-width: 32px;
-      padding: 0 6px;
-      border-radius: 4px;
+      font-size: 11px;
+      height: 24px;
+      min-width: 28px;
+      padding: 0 5px;
+      border-radius: 3px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       flex-shrink: 0;
     }
+    .acc-key:active { background: var(--accent-blue); color: #fff; }
 
-    .acc-key:active {
-      background: var(--accent-blue);
-      color: #ffffff;
-    }
-
-    /* Code Editor Mount Wrapper */
+    /* CodeMount Wrapper */
     #codemirror-wrapper {
-      flex: 1;
+      flex: 1 1 0%;
       width: 100%;
       height: 100%;
       min-height: 0;
@@ -440,7 +421,7 @@
       overflow: hidden;
     }
 
-    /* Native Styled Textarea (Immediate Visibility, zero flicker) */
+    /* Native Styled Textarea (Always Guaranteed to render immediately) */
     #code-editor-fallback {
       position: absolute;
       top: 0;
@@ -448,11 +429,11 @@
       width: 100%;
       height: 100%;
       background: var(--bg-editor);
-      color: #e0e0e0;
+      color: #d4d4d4;
       font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
-      font-size: 13.5px;
+      font-size: 13px;
       line-height: 1.5;
-      padding: 12px 14px;
+      padding: 10px 12px;
       border: none;
       outline: none;
       resize: none;
@@ -463,35 +444,26 @@
       tab-size: 4;
     }
 
-    /* Core Inlined CodeMirror Rules for Instant Zero-Delay Styling */
+    /* CodeMirror VS Code Dark Overrides */
     .CodeMirror {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 100% !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
       width: 100% !important;
+      height: 100% !important;
       font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
-      font-size: 13.5px;
-      line-height: 1.5;
+      font-size: 13px !important;
+      line-height: 1.5 !important;
       background: var(--bg-editor) !important;
       color: #d4d4d4 !important;
-      overflow: hidden !important;
     }
-    .CodeMirror-lines { padding: 4px 0; }
-    .CodeMirror pre.CodeMirror-line { padding: 0 4px; }
     .CodeMirror-gutters {
       background: var(--bg-editor) !important;
       border-right: 1px solid #2d2d2d !important;
-      white-space: nowrap;
     }
     .CodeMirror-linenumber {
       color: #858585 !important;
-      padding: 0 6px 0 4px !important;
-      min-width: 20px;
-      text-align: right;
-      font-size: 12px;
+      font-size: 11px !important;
     }
     .CodeMirror-cursor {
       border-left: 2px solid var(--accent-cyan) !important;
@@ -503,14 +475,12 @@
     .cm-s-default .cm-string { color: #ce9178; }
     .cm-s-default .cm-number { color: #b5cea8; }
     .cm-s-default .cm-comment { color: #6a9955; font-style: italic; }
-    .cm-s-default .cm-operator { color: #d4d4d4; }
-    .cm-s-default .cm-builtin { color: #4ec9b0; }
 
     /* 3. Bottom Console Panel */
     #bottom-panel {
-      height: 140px;
-      min-height: 36px;
-      max-height: 60vh;
+      height: 125px;
+      min-height: 32px;
+      max-height: 55vh;
       background-color: var(--bg-panel);
       border-top: 1px solid var(--border-color);
       display: flex;
@@ -532,17 +502,16 @@
     }
     #panel-resizer:hover { background: var(--accent-blue); }
 
-    #bottom-panel.collapsed { height: 36px !important; }
-    #bottom-panel.maximized { height: 55vh !important; }
+    #bottom-panel.collapsed { height: 32px !important; }
 
     .panel-header {
-      height: 36px;
+      height: 32px;
       background-color: var(--bg-panel-header);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
+      padding: 0 8px;
       flex-shrink: 0;
     }
 
@@ -552,7 +521,7 @@
     }
 
     .panel-tab {
-      padding: 0 12px;
+      padding: 0 10px;
       height: 100%;
       display: flex;
       align-items: center;
@@ -562,26 +531,18 @@
       color: var(--text-muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
-      letter-spacing: 0.5px;
     }
-
     .panel-tab.active {
       color: var(--text-bright);
       border-bottom-color: var(--accent-blue);
-    }
-
-    .panel-actions {
-      display: flex;
-      align-items: center;
-      gap: 4px;
     }
 
     .panel-body {
       flex: 1;
       overflow-y: auto;
       font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 12px;
-      padding: 8px 12px;
+      font-size: 11.5px;
+      padding: 6px 10px;
       background-color: var(--bg-panel);
       color: #e0e0e0;
       white-space: pre-wrap;
@@ -612,7 +573,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      height: 32px;
+      height: 28px;
       margin-top: 4px;
       flex-shrink: 0;
     }
@@ -625,22 +586,22 @@
 
     #repl-input {
       flex: 1;
-      height: 28px;
+      height: 26px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border-color);
       border-radius: 4px;
       color: #ffffff;
       padding: 0 8px;
       font-family: "JetBrains Mono", monospace;
-      font-size: 12px;
+      font-size: 11px;
       outline: none;
     }
 
-    /* 4. Status Bar */
+    /* 4. Status Bar (22px) */
     #status-bar {
-      height: 24px;
-      min-height: 24px;
-      max-height: 24px;
+      height: 22px;
+      min-height: 22px;
+      max-height: 22px;
       background-color: var(--statusbar-bg);
       color: #ffffff;
       font-size: 11px;
@@ -655,14 +616,7 @@
     .status-left, .status-right {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: default;
+      gap: 10px;
     }
 
     .status-dot {
@@ -671,33 +625,27 @@
       border-radius: 50%;
       background-color: #ffcc00;
     }
-
     .status-dot.ready { background-color: #00ff88; }
-    .status-dot.running { background-color: #00e5ff; animation: pulse 1s infinite alternate; }
-
-    @keyframes pulse {
-      from { opacity: 0.4; }
-      to { opacity: 1; }
-    }
+    .status-dot.running { background-color: #00e5ff; }
   </style>
 </head>
 <body>
 
-  <!-- Top Pyodide Wasm Neon Loading Bar -->
+  <!-- Top Pyodide Neon Bar -->
   <div id="pyodide-loader-bar">
     <div id="pyodide-loader-fill"></div>
   </div>
 
-  <!-- 1. Header (fixed height 48px) -->
+  <!-- 1. Header (44px) -->
   <header>
     <div class="header-left">
-      <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer Sidebar">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       </button>
 
       <div class="logo-container">
         <span class="logo-badge">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.75v7.6L12 19.3l-6-5.75v-7.6l6-3.75z"/>
           </svg>
           RDE
@@ -721,11 +669,11 @@
         <span id="run-label">RUN</span>
       </button>
 
-      <button class="btn-action" id="btn-clear-output" title="Clear Console">
+      <button class="icon-btn" id="btn-clear-output" title="Clear Console">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
       </button>
 
-      <button class="btn-action" id="btn-toggle-terminal" title="Toggle Terminal Panel">
+      <button class="icon-btn" id="btn-toggle-terminal" title="Toggle Console">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
       </button>
     </div>
@@ -734,26 +682,20 @@
   <!-- 2. Middle Workspace -->
   <div id="middle-workspace">
 
-    <!-- Activity Bar (44px) -->
+    <!-- Activity Bar (40px) -->
     <div id="activity-bar">
       <div class="activity-icon active" id="act-explorer" title="Explorer">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      </div>
-      <div class="activity-icon" id="act-theme" title="Toggle Theme (Default / Matrix)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
       </div>
     </div>
 
-    <!-- Left Sidebar (220px) -->
+    <!-- Left Sidebar (190px) -->
     <aside id="sidebar-container">
       <div class="sidebar-header">
         <span>EXPLORER</span>
         <div style="display: flex; gap: 4px;">
-          <button class="icon-btn" id="btn-new-file" title="New File" style="min-width:28px; min-height:28px; padding:2px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-          </button>
-          <button class="icon-btn" id="btn-reset-starter" title="Reset Starter Files" style="min-width:28px; min-height:28px; padding:2px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+          <button class="icon-btn" id="btn-new-file" title="New File" style="min-width:24px; min-height:24px; padding:2px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
           </button>
         </div>
       </div>
@@ -788,13 +730,10 @@
         <button class="acc-key" data-insert="def ">def</button>
         <button class="acc-key" data-insert="return ">return</button>
         <button class="acc-key" data-insert="import ">import</button>
-        <button class="acc-key" data-insert="for ">for</button>
-        <button class="acc-key" data-insert="in ">in</button>
-        <button class="acc-key" data-insert="if ">if</button>
         <button class="acc-key" data-insert="print()">print()</button>
       </div>
 
-      <!-- Code Editor Mount Wrapper -->
+      <!-- CodeMount Wrapper -->
       <div id="codemirror-wrapper">
         <textarea id="code-editor-fallback" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
       </div>
@@ -810,72 +749,57 @@
         <div class="panel-tab active" id="ptab-output">OUTPUT</div>
         <div class="panel-tab" id="ptab-terminal">TERMINAL (REPL)</div>
       </div>
-      <div class="panel-actions">
-        <button class="icon-btn" id="btn-copy-output" title="Copy Output" style="min-width:28px; min-height:28px; padding:2px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-        </button>
-        <button class="icon-btn" id="btn-expand-panel" title="Maximize / Restore" style="min-width:28px; min-height:28px; padding:2px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-        </button>
-        <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:28px; min-height:28px; padding:2px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:24px; min-height:24px; padding:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
     </div>
 
     <!-- Output Console View -->
     <div class="panel-body" id="output-view">
-      <div class="out-info">════════════════════════════════════════════════════════════</div>
+      <div class="out-info">----------------------------------------------------</div>
       <div class="out-banner">⚡ RayVen Dev Environment (RDE) v1.0.0</div>
-      <div class="out-info">   Pyodide WebAssembly Python Engine Initializing...</div>
-      <div class="out-info">════════════════════════════════════════════════════════════</div>
+      <div class="out-info">   Pyodide Python Wasm Engine Ready</div>
+      <div class="out-info">----------------------------------------------------</div>
     </div>
 
     <!-- Terminal (REPL) View -->
     <div class="panel-body" id="terminal-view">
       <div id="repl-history">
         <div class="out-info">Python 3.12 (Interactive REPL)</div>
-        <div class="out-info">Type any Python statement and press Enter or Send:</div>
       </div>
       <div class="repl-input-row">
         <span class="repl-prompt">&gt;&gt;&gt;</span>
-        <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256), print('Hello')..." autocomplete="off" spellcheck="false">
-        <button class="btn-action" id="btn-repl-send" style="height:28px; font-size:12px;">Send</button>
+        <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256)..." autocomplete="off" spellcheck="false">
+        <button class="icon-btn" id="btn-repl-send" style="height:26px; padding:0 8px; font-size:11px;">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- 4. Status Bar -->
+  <!-- 4. Status Bar (22px) -->
   <footer id="status-bar">
     <div class="status-left">
-      <div class="status-item">
-        <span>🌿 main</span>
-      </div>
-      <div class="status-item" id="sb-plugin-stat">
-        <span>⏱️ Exec: 0ms</span>
-      </div>
+      <span>🌿 main</span>
+      <span id="sb-plugin-stat">⏱️ Exec: 0ms</span>
     </div>
     <div class="status-right">
-      <div class="status-item" id="sb-wasm-status">
-        <span class="status-dot" id="status-dot"></span>
-        <span id="status-text">Loading Wasm...</span>
-      </div>
-      <div class="status-item">UTF-8</div>
-      <div class="status-item">Spaces: 4</div>
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">Wasm Standby</span>
+      <span>UTF-8</span>
     </div>
   </footer>
 
   <script>
-    // --- 1. DEFAULT STARTER FILES (RAVEN ASCII ART & PYTHON DEMO) ---
+    // --- 1. DEFAULT STARTER FILES ---
     const DEFAULT_RAVEN_CODE = `"""
 ═══════════════════════════════════════════════════════
-   RayVen Development Environment (RDE) - Starter Demo
+   RayVen Development Environment (RDE) - Python Demo
    Powered by Pyodide WebAssembly Python Engine
 ═══════════════════════════════════════════════════════
 """
 import sys
 import math
-import time
 
 # 1. ASCII Raven Art
 RAVEN_ART = r"""
@@ -893,25 +817,22 @@ RAVEN_ART = r"""
     ═══════════════════════════════════
 """
 
-def greet():
+def main():
     print(RAVEN_ART)
-    print(f"Python version: {sys.version.split()[0]}")
-    print("Real-time execution ready!")
+    print(f"🐍 Python version: {sys.version.split()[0]}")
+    print("⚡ Real-time execution ready!")
     print("-" * 45)
 
-greet()
+    # 2. Math & Algorithm Calculation
+    numbers = [12, 45, 78, 23, 56, 89, 90, 34]
+    print(f"Numbers: {numbers}")
+    print(f"Sum: {sum(numbers)}, Max: {max(numbers)}, Mean: {sum(numbers)/len(numbers):.2f}")
 
-# 2. Math & Algorithm Calculation
-print("\\n[Computation Demo]")
-numbers = [12, 45, 78, 23, 56, 89, 90, 34]
-print(f"Numbers: {numbers}")
-print(f"Sum: {sum(numbers)}, Max: {max(numbers)}, Mean: {sum(numbers)/len(numbers):.2f}")
+    primes = [n for n in range(2, 50) if all(n % d != 0 for d in range(2, int(math.isqrt(n)) + 1))]
+    print(f"Primes up to 50: {primes}")
+    print("\\n[Execution Complete] Tap ▶ RUN to re-run or edit code above!")
 
-# Prime numbers generation
-primes = [n for n in range(2, 60) if all(n % d != 0 for d in range(2, int(math.isqrt(n)) + 1))]
-print(f"Primes up to 60: {primes}")
-
-print("\\n[Execution Complete] Tap > RUN to re-run or edit code above!")
+main()
 `;
 
     const DEFAULT_FILES = {
@@ -926,17 +847,10 @@ def fibonacci(n):
     return result
 
 print("Fibonacci sequence (12 items):", fibonacci(12))
-`,
-      "notes.md": `# RayVen RDE Notes
-- Fullscreen immersive Python IDE
-- CodeMirror syntax highlighting
-- Pyodide WebAssembly offline-capable engine
-- Instant RUN with console feedback
 `
     };
 
-    // State
-    const STORAGE_KEY = "rde_virtual_files_v2";
+    const STORAGE_KEY = "rde_virtual_files_v3";
     let files = loadStoredFiles();
     let currentFileName = "main.py";
     if (!files[currentFileName]) {
@@ -971,12 +885,11 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 2. EDITOR INITIALIZATION ---
+    // --- 2. EDITOR INITIALIZATION (Zero-Delay Paint) ---
     function initEditor() {
       const fallback = document.getElementById("code-editor-fallback");
       const initialCode = files[currentFileName] || DEFAULT_RAVEN_CODE;
       
-      // Make textarea immediately visible and prefilled
       fallback.value = initialCode;
       fallback.style.display = "block";
 
@@ -985,7 +898,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         saveStoredFiles(files);
       });
 
-      // Default editor controller
       editor = {
         getValue: () => fallback.value,
         setValue: (v) => { fallback.value = v; },
@@ -1001,7 +913,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         refresh: () => {}
       };
 
-      // Try upgrading to CodeMirror once available
       upgradeToCodeMirror();
     }
 
@@ -1010,7 +921,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       const wrapper = document.getElementById("codemirror-wrapper");
       const fallback = document.getElementById("code-editor-fallback");
       if (!wrapper || !fallback) return;
-      if (wrapper.querySelector(".CodeMirror")) return; // Already upgraded
+      if (wrapper.querySelector(".CodeMirror")) return;
 
       try {
         const initialVal = fallback.value;
@@ -1041,7 +952,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 3. CONSOLE OUTPUT HELPERS ---
+    // --- 3. CONSOLE OUTPUT ---
     const outputView = document.getElementById("output-view");
 
     function appendOutputText(text, type = "stdout") {
@@ -1062,31 +973,26 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       const statusDot = document.getElementById("status-dot");
       const statusText = document.getElementById("status-text");
 
-      fillBar.style.width = "25%";
+      fillBar.style.width = "30%";
       statusText.textContent = "Loading Pyodide...";
 
       try {
         if (typeof loadPyodide === "undefined") {
-          throw new Error("Pyodide script not yet available from CDN.");
+          throw new Error("Pyodide script not available");
         }
 
-        fillBar.style.width = "60%";
+        fillBar.style.width = "65%";
         statusText.textContent = "Compiling Wasm...";
 
         pyodideInstance = await loadPyodide({
           indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/"
         });
 
-        // Redirect stdout and stderr
         pyodideInstance.setStdout({
-          batched: (msg) => {
-            appendOutputText(msg + "\n", "stdout");
-          }
+          batched: (msg) => appendOutputText(msg + "\n", "stdout")
         });
         pyodideInstance.setStderr({
-          batched: (msg) => {
-            appendOutputText(msg + "\n", "stderr");
-          }
+          batched: (msg) => appendOutputText(msg + "\n", "stderr")
         });
 
         fillBar.style.width = "100%";
@@ -1095,11 +1001,11 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         isPyodideLoading = false;
         statusDot.className = "status-dot ready";
         statusText.textContent = "Python 3.12 (Ready)";
-        appendOutputText("[Pyodide Engine Ready] Python 3.12 Wasm initialized.\n", "success");
+        appendOutputText("[Pyodide Ready] Python 3.12 initialized with Wasm.\n", "success");
       } catch (err) {
         console.warn("Pyodide init info:", err);
         statusDot.style.backgroundColor = "var(--accent-red)";
-        statusText.textContent = "Pyodide Standby";
+        statusText.textContent = "Python (Local)";
         appendOutputText(`[Notice] Pyodide Wasm: ${err.message}\n`, "info");
       }
     }
@@ -1116,7 +1022,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       const statusText = document.getElementById("status-text");
       const execStat = document.getElementById("sb-plugin-stat");
 
-      // Ensure bottom panel is opened if collapsed
       const bottomPanel = document.getElementById("bottom-panel");
       if (bottomPanel.classList.contains("collapsed")) {
         bottomPanel.classList.remove("collapsed");
@@ -1166,7 +1071,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 6. FILE EXPLORER MANAGEMENT ---
+    // --- 6. FILE EXPLORER ---
     function renderFileTree() {
       const container = document.getElementById("file-tree-container");
       container.innerHTML = "";
@@ -1176,32 +1081,13 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         item.className = `file-tree-item ${fileName === currentFileName ? "active" : ""}`;
 
         const left = document.createElement("div");
-        left.className = "file-item-left";
+        left.style.display = "flex";
+        left.style.alignItems = "center";
+        left.style.gap = "6px";
         const icon = fileName.endsWith(".py") ? "🐍" : "📄";
         left.innerHTML = `<span>${icon}</span><span>${fileName}</span>`;
 
         item.appendChild(left);
-
-        if (fileName !== "main.py") {
-          const del = document.createElement("span");
-          del.className = "file-item-del";
-          del.textContent = "✕";
-          del.title = "Delete file";
-          del.onclick = (e) => {
-            e.stopPropagation();
-            if (confirm(`Delete ${fileName}?`)) {
-              delete files[fileName];
-              saveStoredFiles(files);
-              if (currentFileName === fileName) {
-                switchToFile("main.py");
-              } else {
-                renderFileTree();
-              }
-            }
-          };
-          item.appendChild(del);
-        }
-
         item.onclick = () => switchToFile(fileName);
         container.appendChild(item);
       });
@@ -1212,11 +1098,10 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       currentFileName = fileName;
       document.getElementById("tab-filename").textContent = fileName;
       editor.setValue(files[fileName]);
-      if (editor.refresh) setTimeout(() => editor.refresh(), 50);
+      if (editor.refresh) setTimeout(() => editor.refresh(), 30);
       renderFileTree();
     }
 
-    // --- 7. PANEL TABS ---
     function showPanelTab(tabName) {
       document.getElementById("ptab-output").classList.toggle("active", tabName === "output");
       document.getElementById("ptab-terminal").classList.toggle("active", tabName === "terminal");
@@ -1224,7 +1109,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.getElementById("terminal-view").style.display = tabName === "terminal" ? "flex" : "none";
     }
 
-    // Dynamic Script Loader (Non-blocking)
     function loadScriptAsync(src, onLoad) {
       const s = document.createElement("script");
       s.src = src;
@@ -1234,45 +1118,67 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.body.appendChild(s);
     }
 
-    // --- 8. SETUP ON DOM READY ---
+    // --- 7. DOM SETUP ---
     window.addEventListener("DOMContentLoaded", () => {
-      // 1. Instantly display UI and Textarea
       initEditor();
       renderFileTree();
 
-      // 2. Buttons & Actions
       document.getElementById("btn-run-code").addEventListener("click", runCode);
       document.getElementById("btn-clear-output").addEventListener("click", clearOutput);
 
       const bottomPanel = document.getElementById("bottom-panel");
       document.getElementById("btn-toggle-terminal").addEventListener("click", () => {
         bottomPanel.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 30);
       });
 
       document.getElementById("btn-close-panel").addEventListener("click", () => {
         bottomPanel.classList.add("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
-      });
-
-      document.getElementById("btn-expand-panel").addEventListener("click", () => {
-        bottomPanel.classList.remove("collapsed");
-        bottomPanel.classList.toggle("maximized");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 30);
       });
 
       document.getElementById("ptab-output").addEventListener("click", () => showPanelTab("output"));
       document.getElementById("ptab-terminal").addEventListener("click", () => showPanelTab("terminal"));
 
-      document.getElementById("btn-copy-output").addEventListener("click", () => {
-        const text = outputView.innerText;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(text);
-          appendOutputText("[Copied output to clipboard]\n", "info");
+      // Sidebar Toggle
+      const sidebar = document.getElementById("sidebar-container");
+      document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 30);
+      });
+
+      document.getElementById("act-explorer").addEventListener("click", () => {
+        sidebar.classList.toggle("collapsed");
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 30);
+      });
+
+      // New File
+      document.getElementById("btn-new-file").addEventListener("click", () => {
+        const name = prompt("Enter new filename (e.g. script.py):");
+        if (name && name.trim()) {
+          const clean = name.trim();
+          if (!files[clean]) {
+            files[clean] = `# File: ${clean}\n`;
+            saveStoredFiles(files);
+            switchToFile(clean);
+          } else {
+            switchToFile(clean);
+          }
         }
       });
 
-      // Terminal REPL
+      // Accessory Keys
+      document.querySelectorAll(".acc-key").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const insertText = btn.getAttribute("data-insert");
+          if (insertText && editor) {
+            editor.replaceSelection(insertText);
+            editor.focus();
+          }
+        });
+      });
+
+      // REPL Send
       const replInput = document.getElementById("repl-input");
       const replHistory = document.getElementById("repl-history");
       const sendRepl = async () => {
@@ -1311,67 +1217,17 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Sidebar Toggle
-      const sidebar = document.getElementById("sidebar-container");
-      document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
-        sidebar.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
-      });
-
-      document.getElementById("act-explorer").addEventListener("click", () => {
-        sidebar.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
-      });
-
-      document.getElementById("act-theme").addEventListener("click", () => {
-        document.body.classList.toggle("matrix-theme");
-      });
-
-      document.getElementById("btn-new-file").addEventListener("click", () => {
-        const name = prompt("Enter new filename (e.g. script.py):");
-        if (name && name.trim()) {
-          const clean = name.trim();
-          if (!files[clean]) {
-            files[clean] = `# File: ${clean}\n`;
-            saveStoredFiles(files);
-            switchToFile(clean);
-          } else {
-            switchToFile(clean);
-          }
-        }
-      });
-
-      document.getElementById("btn-reset-starter").addEventListener("click", () => {
-        if (confirm("Reset workspace to default starter template?")) {
-          files = { ...DEFAULT_FILES };
-          saveStoredFiles(files);
-          switchToFile("main.py");
-          appendOutputText("[Workspace] Reset to starter template.\n", "info");
-        }
-      });
-
-      // Accessory Keys
-      document.querySelectorAll(".acc-key").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const insertText = btn.getAttribute("data-insert");
-          if (insertText && editor) {
-            editor.replaceSelection(insertText);
-            editor.focus();
-          }
-        });
-      });
-
-      // Panel Resizer
+      // Resizer
       const resizer = document.getElementById("panel-resizer");
       let isResizing = false;
       let startY = 0;
-      let startHeight = 140;
+      let startHeight = 125;
 
       const onPointerMove = (e) => {
         if (!isResizing) return;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const delta = startY - clientY;
-        const newH = Math.max(36, Math.min(window.innerHeight * 0.7, startHeight + delta));
+        const newH = Math.max(32, Math.min(window.innerHeight * 0.6, startHeight + delta));
         bottomPanel.style.height = `${newH}px`;
         if (editor && editor.refresh) editor.refresh();
       };
@@ -1389,7 +1245,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         startY = e.touches ? e.touches[0].clientY : e.clientY;
         startHeight = bottomPanel.offsetHeight;
         bottomPanel.classList.remove("collapsed");
-        bottomPanel.classList.remove("maximized");
         window.addEventListener("mousemove", onPointerMove);
         window.addEventListener("mouseup", onPointerUp);
         window.addEventListener("touchmove", onPointerMove);
@@ -1403,14 +1258,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         if (editor && editor.refresh) editor.refresh();
       });
 
-      window.addEventListener("keydown", (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-          e.preventDefault();
-          runCode();
-        }
-      });
-
-      // 3. Asynchronously load CodeMirror and Pyodide in background
+      // Background script loading
       loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js", () => {
         loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js", () => {
           upgradeToCodeMirror();
@@ -1426,11 +1274,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       const sidebar = document.getElementById("sidebar-container");
       if (!sidebar.classList.contains("collapsed")) {
         sidebar.classList.add("collapsed");
-        return true;
-      }
-      const bottomPanel = document.getElementById("bottom-panel");
-      if (bottomPanel.classList.contains("maximized")) {
-        bottomPanel.classList.remove("maximized");
         return true;
       }
       return false;

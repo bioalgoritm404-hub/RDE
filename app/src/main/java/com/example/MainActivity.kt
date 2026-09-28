@@ -82,7 +82,6 @@ fun RdeAppScreen(activity: Activity) {
         modifier = Modifier
             .fillMaxSize()
             .background(VsCodeDarkBg)
-            .imePadding()
             .testTag("rde_root_container")
     ) {
         AndroidView(
@@ -91,7 +90,13 @@ fun RdeAppScreen(activity: Activity) {
                 .testTag("rde_webview"),
             factory = { context ->
                 WebView(context).apply {
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
                     setBackgroundColor(0xFF1E1E1E.toInt())
+                    isFocusable = true
+                    isFocusableInTouchMode = true
                     webViewRef = this
 
                     settings.apply {
@@ -105,8 +110,8 @@ fun RdeAppScreen(activity: Activity) {
                         allowFileAccessFromFileURLs = true
                         @Suppress("DEPRECATION")
                         allowUniversalAccessFromFileURLs = true
-                        useWideViewPort = true
-                        loadWithOverviewMode = true
+                        useWideViewPort = false
+                        loadWithOverviewMode = false
                         cacheMode = WebSettings.LOAD_DEFAULT
                         displayZoomControls = false
                         builtInZoomControls = false
