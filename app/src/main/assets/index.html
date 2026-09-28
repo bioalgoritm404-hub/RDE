@@ -6,81 +6,219 @@
   <title>RDE - RayVen Development Environment</title>
 
   <style>
-    /* Complete Official CodeMirror 5 Core CSS Inlined */
+    /* ==========================================================================
+       1. COMPLETE OFFICIAL CODEMIRROR 5 CORE CSS (INLINED FOR ZERO-LATENCY)
+       ========================================================================== */
     .CodeMirror {
-      font-family: monospace;
-      height: 300px;
-      color: black;
+      font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+      height: 100%;
+      color: #d4d4d4;
       direction: ltr;
       position: relative;
       overflow: hidden;
-      background: white;
+      background: #1e1e1e;
+      font-size: 13px;
+      line-height: 20px;
     }
-    .CodeMirror-lines { padding: 4px 0; cursor: text; min-height: 1px; }
-    .CodeMirror pre.CodeMirror-line, .CodeMirror pre.CodeMirror-line-like {
-      padding: 0 4px;
+    .CodeMirror-lines {
+      padding: 6px 0;
+      cursor: text;
+      min-height: 1px;
+    }
+    .CodeMirror pre.CodeMirror-line,
+    .CodeMirror pre.CodeMirror-line-like {
+      padding: 0 4px 0 8px;
       margin: 0;
       white-space: pre;
       word-wrap: normal;
-      line-height: inherit;
+      line-height: 20px;
       color: inherit;
       z-index: 2;
       position: relative;
       overflow: visible;
       -webkit-tap-highlight-color: transparent;
-      -webkit-font-variant-ligatures: contextual;
-      font-variant-ligatures: contextual;
+      font-family: inherit;
+      font-size: inherit;
     }
-    .CodeMirror-wrap pre.CodeMirror-line, .CodeMirror-wrap pre.CodeMirror-line-like {
+    .CodeMirror-wrap pre.CodeMirror-line,
+    .CodeMirror-wrap pre.CodeMirror-line-like {
       word-wrap: break-word;
       white-space: pre-wrap;
       word-break: normal;
     }
-    .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
-      background-color: white;
+    .CodeMirror-linebackground {
       position: absolute;
-      z-index: 6;
-      display: none;
+      left: 0; right: 0; top: 0; bottom: 0;
+      z-index: 0;
     }
-    .CodeMirror-gutters {
-      position: absolute;
-      left: 0;
-      top: 0;
-      min-height: 100%;
-      z-index: 3;
-      white-space: nowrap;
+    .CodeMirror-linewidget {
+      position: relative;
+      z-index: 2;
+      padding: .1px;
     }
-    .CodeMirror-linenumbers { width: 1px; }
-    .CodeMirror-linenumber {
-      padding: 0 5px 0 5px;
-      min-width: 20px;
-      text-align: right;
-      color: #999;
-      white-space: nowrap;
-    }
-    .CodeMirror-cursor {
-      position: absolute;
-      pointer-events: none;
-      border-left: 2px solid black;
-      border-right: none;
-      width: 0;
-    }
+    .CodeMirror-code { outline: 0; }
     .CodeMirror-scroll {
       overflow: scroll !important;
-      margin-bottom: -50px; margin-right: -50px;
-      padding-bottom: 50px;
+      margin-bottom: -40px; margin-right: -40px;
+      padding-bottom: 40px;
       height: 100%;
-      outline: none;
+      outline: 0;
       position: relative;
+      z-index: 0;
       box-sizing: content-box;
     }
     .CodeMirror-sizer {
       position: relative;
-      border-right: 50px solid transparent;
+      border-right: 40px solid transparent;
       box-sizing: content-box;
     }
+    .CodeMirror-vscrollbar {
+      right: 0; top: 0;
+      overflow-x: hidden;
+      overflow-y: scroll;
+      position: absolute;
+      z-index: 6;
+      display: none;
+    }
+    .CodeMirror-hscrollbar {
+      bottom: 0; left: 0;
+      overflow-y: hidden;
+      overflow-x: scroll;
+      position: absolute;
+      z-index: 6;
+      display: none;
+    }
+    .CodeMirror-scrollbar-filler {
+      right: 0; bottom: 0;
+      position: absolute;
+      z-index: 6;
+      display: none;
+      background: #1e1e1e;
+    }
+    .CodeMirror-gutter-filler {
+      left: 0; bottom: 0;
+      position: absolute;
+      z-index: 6;
+      display: none;
+      background: #1e1e1e;
+    }
+    /* Fixed Separate Column for Line Numbers */
+    .CodeMirror-gutters {
+      position: absolute;
+      left: 0; top: 0;
+      min-height: 100%;
+      z-index: 3;
+      white-space: nowrap;
+      background-color: #1e1e1e !important;
+      border-right: 1px solid #2d2d2d !important;
+      box-sizing: content-box;
+      width: 44px;
+    }
+    .CodeMirror-gutter {
+      white-space: normal;
+      height: 100%;
+      display: inline-block;
+      vertical-align: top;
+      margin-bottom: -40px;
+      box-sizing: content-box;
+    }
+    .CodeMirror-gutter-wrapper {
+      position: absolute;
+      z-index: 4;
+      background: none !important;
+      border: none !important;
+    }
+    .CodeMirror-gutter-background {
+      position: absolute;
+      top: 0; bottom: 0;
+      z-index: 4;
+    }
+    .CodeMirror-gutter-elt {
+      position: absolute;
+      cursor: default;
+      z-index: 4;
+      top: 0;
+    }
+    .CodeMirror-linenumber {
+      padding: 0 8px 0 2px;
+      min-width: 32px;
+      text-align: right;
+      color: #6e7681 !important;
+      font-size: 11.5px;
+      line-height: 20px;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    .CodeMirror-cursor {
+      position: absolute;
+      pointer-events: none;
+      border-left: 2px solid #00e5ff;
+      border-right: none;
+      width: 0;
+    }
+    div.CodeMirror-cursors {
+      visibility: hidden;
+      position: relative;
+      z-index: 3;
+    }
+    .CodeMirror-focused div.CodeMirror-cursors {
+      visibility: visible;
+    }
+    .CodeMirror-selected {
+      background: #264f78 !important;
+    }
+    .CodeMirror-focused .CodeMirror-selected {
+      background: #264f78 !important;
+    }
+    .CodeMirror-line::selection, .CodeMirror-line > span::selection {
+      background: #264f78;
+    }
+    .CodeMirror-measure {
+      position: absolute;
+      width: 100%;
+      height: 0;
+      overflow: hidden;
+      visibility: hidden;
+    }
+    .CodeMirror-measure pre { position: static; }
 
-    /* RDE Dark Palette */
+    /* Visual Indentation & Tab Guides (Python 4-space Alignment) */
+    .cm-tab {
+      display: inline-block;
+      text-decoration: inherit;
+      position: relative;
+    }
+    .cm-tab::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* VS Code Dark+ Syntax Colors */
+    .cm-s-default .cm-keyword { color: #c586c0; font-weight: bold; }
+    .cm-s-default .cm-def { color: #dcdcaa; }
+    .cm-s-default .cm-variable { color: #9cdcfe; }
+    .cm-s-default .cm-variable-2 { color: #9cdcfe; }
+    .cm-s-default .cm-variable-3 { color: #4ec9b0; }
+    .cm-s-default .cm-property { color: #9cdcfe; }
+    .cm-s-default .cm-operator { color: #d4d4d4; }
+    .cm-s-default .cm-string { color: #ce9178; }
+    .cm-s-default .cm-string-2 { color: #ce9178; }
+    .cm-s-default .cm-number { color: #b5cea8; }
+    .cm-s-default .cm-comment { color: #6a9955; font-style: italic; }
+    .cm-s-default .cm-builtin { color: #4ec9b0; }
+    .cm-s-default .cm-atom { color: #569cd6; }
+    .cm-s-default .cm-bracket { color: #ffd700; }
+    .cm-s-default .cm-tag { color: #569cd6; }
+    .cm-s-default .cm-attribute { color: #9cdcfe; }
+    .cm-s-default .cm-error { color: #f14c4c; border-bottom: 1px wavy #f14c4c; }
+
+    /* ==========================================================================
+       2. RDE APPLICATION SHELL & LAYOUT (IMMERSIVE & KEYBOARD-ADAPTIVE)
+       ========================================================================== */
     :root {
       --bg-dark: #1e1e1e;
       --bg-editor: #1e1e1e;
@@ -99,7 +237,7 @@
       --text-main: #cccccc;
       --text-bright: #ffffff;
       --text-muted: #858585;
-      --border-color: #3c3c3c;
+      --border-color: #333333;
     }
 
     * {
@@ -109,24 +247,27 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Guaranteed Viewport Anchoring (Fixes 0-Height Flex Collapse in Android WebView) */
     html, body {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       margin: 0;
       padding: 0;
       overflow: hidden;
       background-color: var(--bg-dark);
       color: var(--text-main);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", Consolas, monospace;
+    }
+
+    /* Fixed App Container that adapts smoothly to window.visualViewport height */
+    #app-root {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
-      z-index: 1;
+      overflow: hidden;
     }
 
     /* Top Pyodide Neon Bar */
@@ -149,11 +290,11 @@
       transition: width 0.3s ease, opacity 0.5s ease;
     }
 
-    /* 1. Header (44px) */
+    /* Header (42px) */
     header {
-      height: 44px;
-      min-height: 44px;
-      max-height: 44px;
+      height: 42px;
+      min-height: 42px;
+      max-height: 42px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -167,33 +308,34 @@
     .header-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .icon-btn {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--border-color);
       color: var(--text-bright);
-      padding: 5px;
-      min-width: 32px;
-      min-height: 32px;
+      padding: 4px 6px;
+      min-width: 30px;
+      min-height: 30px;
       border-radius: 4px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      font-size: 12px;
     }
     .icon-btn:active { background: rgba(255, 255, 255, 0.2); }
 
     .logo-container {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .logo-badge {
       font-weight: 800;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--accent-cyan);
       display: flex;
       align-items: center;
@@ -201,10 +343,10 @@
     }
 
     .logo-sub {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
       border-left: 1px solid var(--border-color);
-      padding-left: 6px;
+      padding-left: 5px;
       text-transform: uppercase;
     }
 
@@ -216,14 +358,14 @@
       overflow-x: auto;
       height: 100%;
       flex: 1;
-      padding: 0 10px;
+      padding: 0 8px;
     }
 
     .file-tab {
       background-color: var(--bg-tab-inactive);
       color: var(--text-muted);
-      font-size: 12px;
-      height: 30px;
+      font-size: 11.5px;
+      height: 28px;
       padding: 0 10px;
       border-radius: 4px 4px 0 0;
       display: flex;
@@ -254,23 +396,23 @@
       color: #ffffff;
       border: none;
       border-radius: 4px;
-      height: 32px;
-      padding: 0 14px;
+      height: 30px;
+      padding: 0 12px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 13px;
+      gap: 5px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(35, 209, 139, 0.4);
     }
-    .btn-run:active { transform: scale(0.97); }
+    .btn-run:active { transform: scale(0.96); }
     .btn-run.running {
       background: linear-gradient(135deg, #cc8500, #ffb300);
       box-shadow: 0 2px 6px rgba(255, 179, 0, 0.4);
     }
 
-    /* 2. Middle Workspace */
+    /* Middle Workspace */
     #middle-workspace {
       flex: 1 1 0%;
       display: flex;
@@ -281,10 +423,10 @@
       width: 100%;
     }
 
-    /* Activity Bar (40px) */
+    /* Activity Bar (36px) */
     #activity-bar {
-      width: 40px;
-      min-width: 40px;
+      width: 36px;
+      min-width: 36px;
       background-color: var(--bg-activity);
       display: flex;
       flex-direction: column;
@@ -297,8 +439,8 @@
     }
 
     .activity-icon {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -312,10 +454,10 @@
       border-left: 2px solid var(--accent-blue);
     }
 
-    /* Sidebar (190px) */
+    /* Sidebar (180px) */
     #sidebar-container {
-      width: 190px;
-      min-width: 190px;
+      width: 180px;
+      min-width: 180px;
       background-color: var(--bg-sidebar);
       border-right: 1px solid var(--border-color);
       display: flex;
@@ -328,7 +470,7 @@
     }
 
     .sidebar-header {
-      padding: 8px 10px;
+      padding: 6px 8px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.8px;
@@ -350,11 +492,11 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 10px;
-      font-size: 13px;
+      padding: 5px 8px;
+      font-size: 12.5px;
       color: var(--text-main);
       cursor: pointer;
-      min-height: 32px;
+      min-height: 28px;
     }
     .file-tree-item:active, .file-tree-item.active {
       background-color: rgba(255, 255, 255, 0.08);
@@ -374,11 +516,11 @@
       overflow: hidden;
     }
 
-    /* Mobile Accessory Bar */
+    /* Mobile Quick Keyboard & Symbol Accessory Bar */
     #mobile-accessory-bar {
-      height: 32px;
-      min-height: 32px;
-      max-height: 32px;
+      height: 34px;
+      min-height: 34px;
+      max-height: 34px;
       background-color: var(--bg-titlebar);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -392,15 +534,34 @@
     }
     #mobile-accessory-bar::-webkit-scrollbar { display: none; }
 
+    .btn-kb-toggle {
+      background: var(--accent-blue);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 11px;
+      height: 26px;
+      padding: 0 8px;
+      border: none;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-kb-toggle.active {
+      background: #107c41;
+    }
+
     .acc-key {
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border-color);
       color: var(--text-bright);
       font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 11px;
-      height: 24px;
+      font-size: 11.5px;
+      height: 26px;
       min-width: 28px;
-      padding: 0 5px;
+      padding: 0 6px;
       border-radius: 3px;
       display: flex;
       align-items: center;
@@ -421,7 +582,7 @@
       overflow: hidden;
     }
 
-    /* Native Styled Textarea (Always Guaranteed to render immediately) */
+    /* Fallback Textarea */
     #code-editor-fallback {
       position: absolute;
       top: 0;
@@ -430,10 +591,10 @@
       height: 100%;
       background: var(--bg-editor);
       color: #d4d4d4;
-      font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+      font-family: "JetBrains Mono", Consolas, monospace;
       font-size: 13px;
-      line-height: 1.5;
-      padding: 10px 12px;
+      line-height: 20px;
+      padding: 8px 12px;
       border: none;
       outline: none;
       resize: none;
@@ -444,42 +605,10 @@
       tab-size: 4;
     }
 
-    /* CodeMirror VS Code Dark Overrides */
-    .CodeMirror {
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      font-family: "JetBrains Mono", Consolas, "Courier New", monospace !important;
-      font-size: 13px !important;
-      line-height: 1.5 !important;
-      background: var(--bg-editor) !important;
-      color: #d4d4d4 !important;
-    }
-    .CodeMirror-gutters {
-      background: var(--bg-editor) !important;
-      border-right: 1px solid #2d2d2d !important;
-    }
-    .CodeMirror-linenumber {
-      color: #858585 !important;
-      font-size: 11px !important;
-    }
-    .CodeMirror-cursor {
-      border-left: 2px solid var(--accent-cyan) !important;
-    }
-    .CodeMirror-selected { background: #264f78 !important; }
-    .cm-s-default .cm-keyword { color: #c586c0; font-weight: bold; }
-    .cm-s-default .cm-def { color: #dcdcaa; }
-    .cm-s-default .cm-variable { color: #9cdcfe; }
-    .cm-s-default .cm-string { color: #ce9178; }
-    .cm-s-default .cm-number { color: #b5cea8; }
-    .cm-s-default .cm-comment { color: #6a9955; font-style: italic; }
-
-    /* 3. Bottom Console Panel */
+    /* Bottom Console Panel */
     #bottom-panel {
-      height: 125px;
-      min-height: 32px;
+      height: 120px;
+      min-height: 28px;
       max-height: 55vh;
       background-color: var(--bg-panel);
       border-top: 1px solid var(--border-color);
@@ -502,10 +631,10 @@
     }
     #panel-resizer:hover { background: var(--accent-blue); }
 
-    #bottom-panel.collapsed { height: 32px !important; }
+    #bottom-panel.collapsed { height: 28px !important; }
 
     .panel-header {
-      height: 32px;
+      height: 28px;
       background-color: var(--bg-panel-header);
       border-bottom: 1px solid var(--border-color);
       display: flex;
@@ -521,7 +650,7 @@
     }
 
     .panel-tab {
-      padding: 0 10px;
+      padding: 0 8px;
       height: 100%;
       display: flex;
       align-items: center;
@@ -573,7 +702,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      height: 28px;
+      height: 26px;
       margin-top: 4px;
       flex-shrink: 0;
     }
@@ -586,7 +715,7 @@
 
     #repl-input {
       flex: 1;
-      height: 26px;
+      height: 24px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border-color);
       border-radius: 4px;
@@ -597,14 +726,14 @@
       outline: none;
     }
 
-    /* 4. Status Bar (22px) */
+    /* Status Bar (22px) */
     #status-bar {
       height: 22px;
       min-height: 22px;
       max-height: 22px;
       background-color: var(--statusbar-bg);
       color: #ffffff;
-      font-size: 11px;
+      font-size: 10.5px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -631,167 +760,174 @@
 </head>
 <body>
 
-  <!-- Top Pyodide Neon Bar -->
-  <div id="pyodide-loader-bar">
-    <div id="pyodide-loader-fill"></div>
-  </div>
+  <!-- Fullscreen App Root -->
+  <div id="app-root">
 
-  <!-- 1. Header (44px) -->
-  <header>
-    <div class="header-left">
-      <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-      </button>
+    <!-- Top Pyodide Neon Bar -->
+    <div id="pyodide-loader-bar">
+      <div id="pyodide-loader-fill"></div>
+    </div>
 
-      <div class="logo-container">
-        <span class="logo-badge">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.75v7.6L12 19.3l-6-5.75v-7.6l6-3.75z"/>
-          </svg>
-          RDE
-        </span>
-        <span class="logo-sub">Python Wasm</span>
+    <!-- 1. Header (42px) -->
+    <header>
+      <div class="header-left">
+        <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+
+        <div class="logo-container">
+          <span class="logo-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.75v7.6L12 19.3l-6-5.75v-7.6l6-3.75z"/>
+            </svg>
+            RDE
+          </span>
+          <span class="logo-sub">Python Wasm</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Active File Tabs -->
-    <div class="tabs-bar" id="editor-tabs">
-      <div class="file-tab active" id="tab-main">
-        <span>🐍</span>
-        <span id="tab-filename">main.py</span>
+      <!-- Active File Tabs -->
+      <div class="tabs-bar" id="editor-tabs">
+        <div class="file-tab active" id="tab-main">
+          <span>🐍</span>
+          <span id="tab-filename">main.py</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Quick Action Bar -->
-    <div class="header-actions">
-      <button class="btn-run" id="btn-run-code" title="Execute Python Code (Ctrl+Enter)">
-        <span id="run-icon">▶</span>
-        <span id="run-label">RUN</span>
-      </button>
+      <!-- Header Actions -->
+      <div class="header-actions">
+        <button class="btn-run" id="btn-run-code" title="Execute Python Code (Ctrl+Enter)">
+          <span id="run-icon">▶</span>
+          <span id="run-label">RUN</span>
+        </button>
 
-      <button class="icon-btn" id="btn-clear-output" title="Clear Console">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-      </button>
+        <button class="icon-btn" id="btn-clear-output" title="Clear Console">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
 
-      <button class="icon-btn" id="btn-toggle-terminal" title="Toggle Console">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- 2. Middle Workspace -->
-  <div id="middle-workspace">
-
-    <!-- Activity Bar (40px) -->
-    <div id="activity-bar">
-      <div class="activity-icon active" id="act-explorer" title="Explorer">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        <button class="icon-btn" id="btn-toggle-terminal" title="Toggle Console">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        </button>
       </div>
-    </div>
+    </header>
 
-    <!-- Left Sidebar (190px) -->
-    <aside id="sidebar-container">
-      <div class="sidebar-header">
-        <span>EXPLORER</span>
-        <div style="display: flex; gap: 4px;">
-          <button class="icon-btn" id="btn-new-file" title="New File" style="min-width:24px; min-height:24px; padding:2px;">
+    <!-- 2. Middle Workspace -->
+    <div id="middle-workspace">
+
+      <!-- Activity Bar (36px) -->
+      <div id="activity-bar">
+        <div class="activity-icon active" id="act-explorer" title="Explorer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+      </div>
+
+      <!-- Left Sidebar (180px) -->
+      <aside id="sidebar-container">
+        <div class="sidebar-header">
+          <span>EXPLORER</span>
+          <button class="icon-btn" id="btn-new-file" title="New File" style="min-width:22px; min-height:22px; padding:2px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
           </button>
         </div>
-      </div>
-      <div class="sidebar-content" id="file-tree-container">
-        <!-- Files populated dynamically -->
-      </div>
-    </aside>
+        <div class="sidebar-content" id="file-tree-container">
+          <!-- Populated dynamically -->
+        </div>
+      </aside>
 
-    <!-- Main Code Editor Section -->
-    <main id="editor-container">
-      <!-- Touch Accessory Bar -->
-      <div id="mobile-accessory-bar">
-        <button class="acc-key" data-insert="    ">Tab</button>
-        <button class="acc-key" data-insert=":">:</button>
-        <button class="acc-key" data-insert="(">(</button>
-        <button class="acc-key" data-insert=")">)</button>
-        <button class="acc-key" data-insert="&quot;">&quot;</button>
-        <button class="acc-key" data-insert="'">'</button>
-        <button class="acc-key" data-insert="=">=</button>
-        <button class="acc-key" data-insert="#">#</button>
-        <button class="acc-key" data-insert="_">_</button>
-        <button class="acc-key" data-insert="[">[</button>
-        <button class="acc-key" data-insert="]">]</button>
-        <button class="acc-key" data-insert="{">{</button>
-        <button class="acc-key" data-insert="}">}</button>
-        <button class="acc-key" data-insert="+">+</button>
-        <button class="acc-key" data-insert="-">-</button>
-        <button class="acc-key" data-insert="*">*</button>
-        <button class="acc-key" data-insert="/">/</button>
-        <button class="acc-key" data-insert=",">,</button>
-        <button class="acc-key" data-insert=".">.</button>
-        <button class="acc-key" data-insert="def ">def</button>
-        <button class="acc-key" data-insert="return ">return</button>
-        <button class="acc-key" data-insert="import ">import</button>
-        <button class="acc-key" data-insert="print()">print()</button>
+      <!-- Main Code Editor Section -->
+      <main id="editor-container">
+        <!-- Touch Accessory Bar with Keyboard Mode Toggle -->
+        <div id="mobile-accessory-bar">
+          <button class="btn-kb-toggle" id="btn-toggle-keyboard" title="Tap to Toggle Virtual Keyboard">
+            <span>⌨️</span><span id="kb-btn-text">Type</span>
+          </button>
+          <button class="acc-key" data-insert="    ">Tab</button>
+          <button class="acc-key" data-insert=":">:</button>
+          <button class="acc-key" data-insert="(">(</button>
+          <button class="acc-key" data-insert=")">)</button>
+          <button class="acc-key" data-insert="&quot;">&quot;</button>
+          <button class="acc-key" data-insert="'">'</button>
+          <button class="acc-key" data-insert="=">=</button>
+          <button class="acc-key" data-insert="#">#</button>
+          <button class="acc-key" data-insert="_">_</button>
+          <button class="acc-key" data-insert="[">[</button>
+          <button class="acc-key" data-insert="]">]</button>
+          <button class="acc-key" data-insert="{">{</button>
+          <button class="acc-key" data-insert="}">}</button>
+          <button class="acc-key" data-insert="+">+</button>
+          <button class="acc-key" data-insert="-">-</button>
+          <button class="acc-key" data-insert="*">*</button>
+          <button class="acc-key" data-insert="/">/</button>
+          <button class="acc-key" data-insert=",">,</button>
+          <button class="acc-key" data-insert=".">.</button>
+          <button class="acc-key" data-insert="def ">def</button>
+          <button class="acc-key" data-insert="return ">return</button>
+          <button class="acc-key" data-insert="import ">import</button>
+          <button class="acc-key" data-insert="print()">print()</button>
+        </div>
+
+        <!-- CodeMount Wrapper -->
+        <div id="codemirror-wrapper">
+          <textarea id="code-editor-fallback" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        </div>
+      </main>
+
+    </div>
+
+    <!-- 3. Bottom Console Panel -->
+    <div id="bottom-panel">
+      <div id="panel-resizer" title="Drag to resize console"></div>
+      <div class="panel-header">
+        <div class="panel-tabs">
+          <div class="panel-tab active" id="ptab-output">OUTPUT</div>
+          <div class="panel-tab" id="ptab-terminal">TERMINAL (REPL)</div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:22px; min-height:22px; padding:2px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
       </div>
 
-      <!-- CodeMount Wrapper -->
-      <div id="codemirror-wrapper">
-        <textarea id="code-editor-fallback" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+      <!-- Output Console View -->
+      <div class="panel-body" id="output-view">
+        <div class="out-info">----------------------------------------------------</div>
+        <div class="out-banner">⚡ RayVen Dev Environment (RDE) v1.0.0</div>
+        <div class="out-info">   Pyodide Python Wasm Engine Ready</div>
+        <div class="out-info">----------------------------------------------------</div>
       </div>
-    </main>
+
+      <!-- Terminal (REPL) View -->
+      <div class="panel-body" id="terminal-view">
+        <div id="repl-history">
+          <div class="out-info">Python 3.12 (Interactive REPL)</div>
+        </div>
+        <div class="repl-input-row">
+          <span class="repl-prompt">&gt;&gt;&gt;</span>
+          <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256)..." autocomplete="off" spellcheck="false">
+          <button class="icon-btn" id="btn-repl-send" style="height:24px; padding:0 8px; font-size:11px;">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Status Bar (22px) -->
+    <footer id="status-bar">
+      <div class="status-left">
+        <span>🌿 main</span>
+        <span id="sb-plugin-stat">⏱️ Exec: 0ms</span>
+      </div>
+      <div class="status-right">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Wasm Standby</span>
+        <span>UTF-8</span>
+        <span>Spaces: 4</span>
+      </div>
+    </footer>
 
   </div>
-
-  <!-- 3. Bottom Console Panel -->
-  <div id="bottom-panel">
-    <div id="panel-resizer" title="Drag to resize console"></div>
-    <div class="panel-header">
-      <div class="panel-tabs">
-        <div class="panel-tab active" id="ptab-output">OUTPUT</div>
-        <div class="panel-tab" id="ptab-terminal">TERMINAL (REPL)</div>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="btn-close-panel" title="Minimize Panel" style="min-width:24px; min-height:24px; padding:2px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Output Console View -->
-    <div class="panel-body" id="output-view">
-      <div class="out-info">----------------------------------------------------</div>
-      <div class="out-banner">⚡ RayVen Dev Environment (RDE) v1.0.0</div>
-      <div class="out-info">   Pyodide Python Wasm Engine Ready</div>
-      <div class="out-info">----------------------------------------------------</div>
-    </div>
-
-    <!-- Terminal (REPL) View -->
-    <div class="panel-body" id="terminal-view">
-      <div id="repl-history">
-        <div class="out-info">Python 3.12 (Interactive REPL)</div>
-      </div>
-      <div class="repl-input-row">
-        <span class="repl-prompt">&gt;&gt;&gt;</span>
-        <input type="text" id="repl-input" placeholder="e.g. 2 + 2, math.sqrt(256)..." autocomplete="off" spellcheck="false">
-        <button class="icon-btn" id="btn-repl-send" style="height:26px; padding:0 8px; font-size:11px;">Send</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 4. Status Bar (22px) -->
-  <footer id="status-bar">
-    <div class="status-left">
-      <span>🌿 main</span>
-      <span id="sb-plugin-stat">⏱️ Exec: 0ms</span>
-    </div>
-    <div class="status-right">
-      <span class="status-dot" id="status-dot"></span>
-      <span id="status-text">Wasm Standby</span>
-      <span>UTF-8</span>
-    </div>
-  </footer>
 
   <script>
-    // --- 1. DEFAULT STARTER FILES ---
+    // --- 1. DEFAULT STARTER FILES (RAVEN ASCII ART & PYTHON DEMO) ---
     const DEFAULT_RAVEN_CODE = `"""
 ═══════════════════════════════════════════════════════
    RayVen Development Environment (RDE) - Python Demo
@@ -850,7 +986,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
 `
     };
 
-    const STORAGE_KEY = "rde_virtual_files_v3";
+    const STORAGE_KEY = "rde_virtual_files_v4";
     let files = loadStoredFiles();
     let currentFileName = "main.py";
     if (!files[currentFileName]) {
@@ -861,6 +997,9 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
     let pyodideInstance = null;
     let isPyodideLoading = true;
     let isExecuting = false;
+    let keyboardActive = false;
+    let lastTapTime = 0;
+    let lastTapCoords = null;
 
     function loadStoredFiles() {
       try {
@@ -885,13 +1024,41 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 2. EDITOR INITIALIZATION (Zero-Delay Paint) ---
+    // --- 2. KEYBOARD TOGGLE & TOUCH HANDLING ---
+    function setKeyboardEnabled(enabled) {
+      keyboardActive = enabled;
+      const kbBtn = document.getElementById("btn-toggle-keyboard");
+      const kbText = document.getElementById("kb-btn-text");
+      if (kbBtn && kbText) {
+        kbBtn.classList.toggle("active", enabled);
+        kbText.textContent = enabled ? "Hide" : "Type";
+      }
+
+      const input = editor ? editor.getInputField() : document.getElementById("code-editor-fallback");
+      if (!input) return;
+
+      if (enabled) {
+        input.setAttribute("inputmode", "text");
+        input.focus();
+        setTimeout(() => {
+          if (editor && editor.scrollIntoView) {
+            editor.scrollIntoView(editor.getCursor(), 30);
+          }
+        }, 120);
+      } else {
+        input.setAttribute("inputmode", "none");
+        input.blur();
+      }
+    }
+
+    // --- 3. EDITOR INITIALIZATION (Clean Monospace & VS Code Gutters) ---
     function initEditor() {
       const fallback = document.getElementById("code-editor-fallback");
       const initialCode = files[currentFileName] || DEFAULT_RAVEN_CODE;
       
       fallback.value = initialCode;
       fallback.style.display = "block";
+      fallback.setAttribute("inputmode", "none"); // Start in navigation mode
 
       fallback.addEventListener("input", () => {
         files[currentFileName] = fallback.value;
@@ -910,7 +1077,10 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
           fallback.focus();
         },
         focus: () => fallback.focus(),
-        refresh: () => {}
+        refresh: () => {},
+        getInputField: () => fallback,
+        getCursor: () => ({ line: 0, ch: 0 }),
+        scrollIntoView: () => {}
       };
 
       upgradeToCodeMirror();
@@ -933,17 +1103,56 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
           autoCloseBrackets: true,
           tabSize: 4,
           indentUnit: 4,
-          lineWrapping: true
+          indentWithTabs: false,
+          lineWrapping: false, // Horizontal scroll keeps Python indents crystal clear
+          gutters: ["CodeMirror-linenumbers"]
         });
 
         fallback.style.display = "none";
         cmInstance.setSize("100%", "100%");
         cmInstance.refresh();
 
+        const input = cmInstance.getInputField();
+        if (input) {
+          // Default: cursor positioning & scroll without summoning software keyboard
+          input.setAttribute("inputmode", "none");
+        }
+
+        // Two-Tap Logic: First tap positions cursor, second tap near same location opens keyboard
+        const cmEl = cmInstance.getWrapperElement();
+        cmEl.addEventListener("touchend", (e) => {
+          const touch = e.changedTouches ? e.changedTouches[0] : e;
+          const now = Date.now();
+          const coords = { x: touch.clientX, y: touch.clientY };
+
+          if (keyboardActive) {
+            // Already typing, keep keyboard active
+            return;
+          }
+
+          const isNear = lastTapCoords && Math.hypot(coords.x - lastTapCoords.x, coords.y - lastTapCoords.y) < 30;
+          const isDoubleTap = (now - lastTapTime < 500) && isNear;
+
+          lastTapTime = now;
+          lastTapCoords = coords;
+
+          if (isDoubleTap) {
+            // User intentionally wants to edit here!
+            setKeyboardEnabled(true);
+          } else {
+            // Single tap: position cursor without keyboard
+            if (input) input.setAttribute("inputmode", "none");
+          }
+        }, { passive: true });
+
         cmInstance.on("change", () => {
           files[currentFileName] = cmInstance.getValue();
           fallback.value = cmInstance.getValue();
           saveStoredFiles(files);
+        });
+
+        cmInstance.on("cursorActivity", () => {
+          // Update status bar or cursor tracker if needed
         });
 
         editor = cmInstance;
@@ -952,7 +1161,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 3. CONSOLE OUTPUT ---
+    // --- 4. CONSOLE OUTPUT ---
     const outputView = document.getElementById("output-view");
 
     function appendOutputText(text, type = "stdout") {
@@ -967,7 +1176,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       outputView.innerHTML = "";
     }
 
-    // --- 4. PYODIDE WASM INITIALIZATION ---
+    // --- 5. PYODIDE WASM INITIALIZATION ---
     async function initPyodideWasm() {
       const fillBar = document.getElementById("pyodide-loader-fill");
       const statusDot = document.getElementById("status-dot");
@@ -1010,7 +1219,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 5. CODE EXECUTION (RUN) ---
+    // --- 6. CODE EXECUTION (RUN) ---
     async function runCode() {
       if (isExecuting) return;
 
@@ -1071,7 +1280,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 6. FILE EXPLORER ---
+    // --- 7. FILE EXPLORER ---
     function renderFileTree() {
       const container = document.getElementById("file-tree-container");
       container.innerHTML = "";
@@ -1118,13 +1327,61 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.body.appendChild(s);
     }
 
-    // --- 7. DOM SETUP ---
+    // --- 8. SMOOTH VIEWPORT ADAPTATION (PREVENTS JUMPING OFFSCREEN ON KEYBOARD OPEN) ---
+    function adaptLayoutToViewport() {
+      const vv = window.visualViewport;
+      const appRoot = document.getElementById("app-root");
+      
+      // Lock window scroll strictly to (0,0)
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+
+      if (vv && appRoot) {
+        // Size the container exactly to the visible height above the keyboard
+        appRoot.style.height = `${vv.height}px`;
+        appRoot.style.top = `${vv.offsetTop}px`;
+      }
+
+      if (editor && typeof editor.refresh === "function") {
+        editor.refresh();
+        // Keep active cursor line directly in sight
+        const cur = editor.getCursor();
+        setTimeout(() => {
+          if (editor && editor.scrollIntoView) {
+            editor.scrollIntoView(cur, 30);
+          }
+        }, 50);
+      }
+    }
+
+    // --- 9. DOM SETUP ---
     window.addEventListener("DOMContentLoaded", () => {
       initEditor();
       renderFileTree();
 
+      // Viewport adaptation for virtual keyboard
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", adaptLayoutToViewport);
+        window.visualViewport.addEventListener("scroll", () => {
+          window.scrollTo(0, 0);
+        });
+      }
+      window.addEventListener("scroll", () => {
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo(0, 0);
+        }
+      });
+      window.addEventListener("resize", adaptLayoutToViewport);
+
+      // Buttons
       document.getElementById("btn-run-code").addEventListener("click", runCode);
       document.getElementById("btn-clear-output").addEventListener("click", clearOutput);
+
+      // Keyboard Toggle Button
+      document.getElementById("btn-toggle-keyboard").addEventListener("click", () => {
+        setKeyboardEnabled(!keyboardActive);
+      });
 
       const bottomPanel = document.getElementById("bottom-panel");
       document.getElementById("btn-toggle-terminal").addEventListener("click", () => {
@@ -1167,7 +1424,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Accessory Keys
+      // Accessory Keys (insert without closing or popping keyboard unnecessarily)
       document.querySelectorAll(".acc-key").forEach(btn => {
         btn.addEventListener("click", () => {
           const insertText = btn.getAttribute("data-insert");
@@ -1221,13 +1478,13 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       const resizer = document.getElementById("panel-resizer");
       let isResizing = false;
       let startY = 0;
-      let startHeight = 125;
+      let startHeight = 120;
 
       const onPointerMove = (e) => {
         if (!isResizing) return;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const delta = startY - clientY;
-        const newH = Math.max(32, Math.min(window.innerHeight * 0.6, startHeight + delta));
+        const newH = Math.max(28, Math.min(window.innerHeight * 0.6, startHeight + delta));
         bottomPanel.style.height = `${newH}px`;
         if (editor && editor.refresh) editor.refresh();
       };
@@ -1254,10 +1511,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       resizer.addEventListener("mousedown", onPointerDown);
       resizer.addEventListener("touchstart", onPointerDown, { passive: true });
 
-      window.addEventListener("resize", () => {
-        if (editor && editor.refresh) editor.refresh();
-      });
-
       // Background script loading
       loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js", () => {
         loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js", () => {
@@ -1271,6 +1524,11 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
     });
 
     window.handleAndroidBack = function() {
+      // If keyboard is open, close it first
+      if (keyboardActive) {
+        setKeyboardEnabled(false);
+        return true;
+      }
       const sidebar = document.getElementById("sidebar-container");
       if (!sidebar.classList.contains("collapsed")) {
         sidebar.classList.add("collapsed");
