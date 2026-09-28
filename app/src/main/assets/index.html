@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>RDE - RayVen Development Environment</title>
 
-  <!-- CodeMirror CSS from CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
-
   <style>
     :root {
       --bg-dark: #1e1e1e;
@@ -94,7 +90,7 @@
       transition: width 0.3s ease, opacity 0.5s ease;
     }
 
-    /* 1. Header (fixed height ~48px) */
+    /* 1. Header (fixed height 48px) */
     header {
       height: 48px;
       min-height: 48px;
@@ -248,7 +244,7 @@
       color: var(--text-bright);
     }
 
-    /* 2. Middle Workspace (flex: 1; display: flex; min-height: 0; position: relative;) */
+    /* 2. Middle Workspace */
     #middle-workspace {
       flex: 1;
       display: flex;
@@ -258,7 +254,7 @@
       overflow: hidden;
     }
 
-    /* Activity Bar (44px) */
+    /* Activity Bar */
     #activity-bar {
       width: 44px;
       min-width: 44px;
@@ -433,7 +429,7 @@
       color: #ffffff;
     }
 
-    /* CodeMirror Mount Wrapper */
+    /* Code Editor Mount Wrapper */
     #codemirror-wrapper {
       flex: 1;
       width: 100%;
@@ -444,6 +440,30 @@
       overflow: hidden;
     }
 
+    /* Native Styled Textarea (Immediate Visibility, zero flicker) */
+    #code-editor-fallback {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-editor);
+      color: #e0e0e0;
+      font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+      font-size: 13.5px;
+      line-height: 1.5;
+      padding: 12px 14px;
+      border: none;
+      outline: none;
+      resize: none;
+      box-sizing: border-box;
+      display: block;
+      white-space: pre;
+      overflow: auto;
+      tab-size: 4;
+    }
+
+    /* Core Inlined CodeMirror Rules for Instant Zero-Delay Styling */
     .CodeMirror {
       position: absolute;
       top: 0;
@@ -457,44 +477,36 @@
       line-height: 1.5;
       background: var(--bg-editor) !important;
       color: #d4d4d4 !important;
+      overflow: hidden !important;
     }
-
+    .CodeMirror-lines { padding: 4px 0; }
+    .CodeMirror pre.CodeMirror-line { padding: 0 4px; }
     .CodeMirror-gutters {
       background: var(--bg-editor) !important;
       border-right: 1px solid #2d2d2d !important;
+      white-space: nowrap;
     }
-
     .CodeMirror-linenumber {
       color: #858585 !important;
       padding: 0 6px 0 4px !important;
+      min-width: 20px;
+      text-align: right;
       font-size: 12px;
     }
-
     .CodeMirror-cursor {
       border-left: 2px solid var(--accent-cyan) !important;
     }
+    .CodeMirror-selected { background: #264f78 !important; }
+    .cm-s-default .cm-keyword { color: #c586c0; font-weight: bold; }
+    .cm-s-default .cm-def { color: #dcdcaa; }
+    .cm-s-default .cm-variable { color: #9cdcfe; }
+    .cm-s-default .cm-string { color: #ce9178; }
+    .cm-s-default .cm-number { color: #b5cea8; }
+    .cm-s-default .cm-comment { color: #6a9955; font-style: italic; }
+    .cm-s-default .cm-operator { color: #d4d4d4; }
+    .cm-s-default .cm-builtin { color: #4ec9b0; }
 
-    /* Fallback Textarea if CDN is loading */
-    #code-editor-fallback {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-editor);
-      color: #d4d4d4;
-      font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 13.5px;
-      line-height: 1.5;
-      padding: 10px;
-      border: none;
-      outline: none;
-      resize: none;
-      box-sizing: border-box;
-      display: none;
-    }
-
-    /* 3. Bottom Console Panel (resizable / toggleable, default height ~140px) */
+    /* 3. Bottom Console Panel */
     #bottom-panel {
       height: 140px;
       min-height: 36px;
@@ -508,9 +520,8 @@
       position: relative;
     }
 
-    /* Panel Resizer Handle */
     #panel-resizer {
-      height: 5px;
+      height: 6px;
       cursor: ns-resize;
       background: transparent;
       position: absolute;
@@ -519,17 +530,10 @@
       right: 0;
       z-index: 35;
     }
-    #panel-resizer:hover {
-      background: var(--accent-blue);
-    }
+    #panel-resizer:hover { background: var(--accent-blue); }
 
-    #bottom-panel.collapsed {
-      height: 36px !important;
-    }
-
-    #bottom-panel.maximized {
-      height: 55vh !important;
-    }
+    #bottom-panel.collapsed { height: 36px !important; }
+    #bottom-panel.maximized { height: 55vh !important; }
 
     .panel-header {
       height: 36px;
@@ -632,7 +636,7 @@
       outline: none;
     }
 
-    /* 4. Status Bar (Fixed at the very bottom edge of screen, height: 24px) */
+    /* 4. Status Bar */
     #status-bar {
       height: 24px;
       min-height: 24px;
@@ -684,7 +688,7 @@
     <div id="pyodide-loader-fill"></div>
   </div>
 
-  <!-- 1. Header (fixed height ~48px) -->
+  <!-- 1. Header (fixed height 48px) -->
   <header>
     <div class="header-left">
       <button class="icon-btn" id="btn-toggle-sidebar" title="Toggle Explorer Sidebar">
@@ -727,7 +731,7 @@
     </div>
   </header>
 
-  <!-- 2. Middle Workspace (flex: 1; display: flex; min-height: 0; position: relative;) -->
+  <!-- 2. Middle Workspace -->
   <div id="middle-workspace">
 
     <!-- Activity Bar (44px) -->
@@ -790,7 +794,7 @@
         <button class="acc-key" data-insert="print()">print()</button>
       </div>
 
-      <!-- CodeMirror Wrapper -->
+      <!-- Code Editor Mount Wrapper -->
       <div id="codemirror-wrapper">
         <textarea id="code-editor-fallback" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
       </div>
@@ -798,7 +802,7 @@
 
   </div>
 
-  <!-- 3. Bottom Console Panel (resizable / toggleable, default height ~140px) -->
+  <!-- 3. Bottom Console Panel -->
   <div id="bottom-panel">
     <div id="panel-resizer" title="Drag to resize console"></div>
     <div class="panel-header">
@@ -841,7 +845,7 @@
     </div>
   </div>
 
-  <!-- 4. Status Bar (Fixed at the very bottom edge of screen, height: 24px) -->
+  <!-- 4. Status Bar -->
   <footer id="status-bar">
     <div class="status-left">
       <div class="status-item">
@@ -861,16 +865,6 @@
     </div>
   </footer>
 
-  <!-- Scripts: CodeMirror and Pyodide -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-
   <script>
     // --- 1. DEFAULT STARTER FILES (RAVEN ASCII ART & PYTHON DEMO) ---
     const DEFAULT_RAVEN_CODE = `"""
@@ -886,7 +880,7 @@ import time
 # 1. ASCII Raven Art
 RAVEN_ART = r"""
         __
-       /\\\\' ,\\__
+       /\\\\ ,\\__
       |    .0 )_
       \\__   _/  )
        /  \\    /
@@ -901,9 +895,9 @@ RAVEN_ART = r"""
 
 def greet():
     print(RAVEN_ART)
-    print(f"🐍 Python version: {sys.version.split()[0]}")
-    print("⚡ Real-time execution ready!")
-    print("─" * 45)
+    print(f"Python version: {sys.version.split()[0]}")
+    print("Real-time execution ready!")
+    print("-" * 45)
 
 greet()
 
@@ -917,7 +911,7 @@ print(f"Sum: {sum(numbers)}, Max: {max(numbers)}, Mean: {sum(numbers)/len(number
 primes = [n for n in range(2, 60) if all(n % d != 0 for d in range(2, int(math.isqrt(n)) + 1))]
 print(f"Primes up to 60: {primes}")
 
-print("\\n[Execution Complete] Tap ▶ RUN to re-run or edit code above!")
+print("\\n[Execution Complete] Tap > RUN to re-run or edit code above!")
 `;
 
     const DEFAULT_FILES = {
@@ -977,50 +971,21 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       }
     }
 
-    // --- 2. EDITOR INITIALIZATION (BULLETPROOF MOUNTING) ---
+    // --- 2. EDITOR INITIALIZATION ---
     function initEditor() {
-      const wrapper = document.getElementById("codemirror-wrapper");
       const fallback = document.getElementById("code-editor-fallback");
       const initialCode = files[currentFileName] || DEFAULT_RAVEN_CODE;
-
-      if (typeof CodeMirror !== "undefined") {
-        try {
-          editor = CodeMirror(wrapper, {
-            value: initialCode,
-            mode: "python",
-            lineNumbers: true,
-            matchBrackets: true,
-            autoCloseBrackets: true,
-            foldGutter: true,
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-            tabSize: 4,
-            indentUnit: 4,
-            lineWrapping: true
-          });
-
-          // Ensure CodeMirror fills the flex container completely
-          editor.setSize("100%", "100%");
-          setTimeout(() => editor.refresh(), 50);
-          setTimeout(() => editor.refresh(), 200);
-
-          editor.on("change", () => {
-            files[currentFileName] = editor.getValue();
-            saveStoredFiles(files);
-          });
-          return;
-        } catch (err) {
-          console.error("CodeMirror init failed, using fallback:", err);
-        }
-      }
-
-      // Fallback textarea if CodeMirror CDN is unavailable or loading
-      fallback.style.display = "block";
+      
+      // Make textarea immediately visible and prefilled
       fallback.value = initialCode;
+      fallback.style.display = "block";
+
       fallback.addEventListener("input", () => {
         files[currentFileName] = fallback.value;
         saveStoredFiles(files);
       });
 
+      // Default editor controller
       editor = {
         getValue: () => fallback.value,
         setValue: (v) => { fallback.value = v; },
@@ -1035,6 +1000,45 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         focus: () => fallback.focus(),
         refresh: () => {}
       };
+
+      // Try upgrading to CodeMirror once available
+      upgradeToCodeMirror();
+    }
+
+    function upgradeToCodeMirror() {
+      if (typeof CodeMirror === "undefined") return;
+      const wrapper = document.getElementById("codemirror-wrapper");
+      const fallback = document.getElementById("code-editor-fallback");
+      if (!wrapper || !fallback) return;
+      if (wrapper.querySelector(".CodeMirror")) return; // Already upgraded
+
+      try {
+        const initialVal = fallback.value;
+        const cmInstance = CodeMirror(wrapper, {
+          value: initialVal,
+          mode: "python",
+          lineNumbers: true,
+          matchBrackets: true,
+          autoCloseBrackets: true,
+          tabSize: 4,
+          indentUnit: 4,
+          lineWrapping: true
+        });
+
+        fallback.style.display = "none";
+        cmInstance.setSize("100%", "100%");
+        cmInstance.refresh();
+
+        cmInstance.on("change", () => {
+          files[currentFileName] = cmInstance.getValue();
+          fallback.value = cmInstance.getValue();
+          saveStoredFiles(files);
+        });
+
+        editor = cmInstance;
+      } catch (e) {
+        console.warn("CodeMirror upgrade skipped:", e);
+      }
     }
 
     // --- 3. CONSOLE OUTPUT HELPERS ---
@@ -1093,14 +1097,14 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         statusText.textContent = "Python 3.12 (Ready)";
         appendOutputText("[Pyodide Engine Ready] Python 3.12 Wasm initialized.\n", "success");
       } catch (err) {
-        console.warn("Pyodide init error:", err);
+        console.warn("Pyodide init info:", err);
         statusDot.style.backgroundColor = "var(--accent-red)";
-        statusText.textContent = "Pyodide Offline";
+        statusText.textContent = "Pyodide Standby";
         appendOutputText(`[Notice] Pyodide Wasm: ${err.message}\n`, "info");
       }
     }
 
-    // --- 5. CODE EXECUTION (▶ RUN) ---
+    // --- 5. CODE EXECUTION (RUN) ---
     async function runCode() {
       if (isExecuting) return;
 
@@ -1133,7 +1137,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
 
       appendOutputText(`\n>>> [Executing ${currentFileName}] ${new Date().toLocaleTimeString()} <<<\n`, "info");
 
-      // Native haptic feedback via AndroidBridge
       if (window.AndroidBridge && typeof window.AndroidBridge.vibrate === "function") {
         try { window.AndroidBridge.vibrate(20); } catch (_) {}
       }
@@ -1213,7 +1216,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       renderFileTree();
     }
 
-    // --- 7. PANEL TABS & RESIZING ---
+    // --- 7. PANEL TABS ---
     function showPanelTab(tabName) {
       document.getElementById("ptab-output").classList.toggle("active", tabName === "output");
       document.getElementById("ptab-terminal").classList.toggle("active", tabName === "terminal");
@@ -1221,41 +1224,46 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       document.getElementById("terminal-view").style.display = tabName === "terminal" ? "flex" : "none";
     }
 
-    // --- 8. EVENT LISTENERS & SETUP ---
+    // Dynamic Script Loader (Non-blocking)
+    function loadScriptAsync(src, onLoad) {
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      if (onLoad) s.onload = onLoad;
+      s.onerror = (e) => console.warn("Failed loading:", src, e);
+      document.body.appendChild(s);
+    }
+
+    // --- 8. SETUP ON DOM READY ---
     window.addEventListener("DOMContentLoaded", () => {
+      // 1. Instantly display UI and Textarea
       initEditor();
       renderFileTree();
-      initPyodideWasm();
 
-      // Run button
+      // 2. Buttons & Actions
       document.getElementById("btn-run-code").addEventListener("click", runCode);
-
-      // Clear output
       document.getElementById("btn-clear-output").addEventListener("click", clearOutput);
 
-      // Toggle terminal / console
       const bottomPanel = document.getElementById("bottom-panel");
       document.getElementById("btn-toggle-terminal").addEventListener("click", () => {
         bottomPanel.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
       });
 
       document.getElementById("btn-close-panel").addEventListener("click", () => {
         bottomPanel.classList.add("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
       });
 
       document.getElementById("btn-expand-panel").addEventListener("click", () => {
         bottomPanel.classList.remove("collapsed");
         bottomPanel.classList.toggle("maximized");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
       });
 
-      // Panel Tabs
       document.getElementById("ptab-output").addEventListener("click", () => showPanelTab("output"));
       document.getElementById("ptab-terminal").addEventListener("click", () => showPanelTab("terminal"));
 
-      // Copy output
       document.getElementById("btn-copy-output").addEventListener("click", () => {
         const text = outputView.innerText;
         if (navigator.clipboard) {
@@ -1264,7 +1272,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Interactive REPL Send
+      // Terminal REPL
       const replInput = document.getElementById("repl-input");
       const replHistory = document.getElementById("repl-history");
       const sendRepl = async () => {
@@ -1303,24 +1311,22 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Toggle Sidebar
+      // Sidebar Toggle
       const sidebar = document.getElementById("sidebar-container");
       document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
         sidebar.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
       });
 
       document.getElementById("act-explorer").addEventListener("click", () => {
         sidebar.classList.toggle("collapsed");
-        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 100);
+        if (editor && editor.refresh) setTimeout(() => editor.refresh(), 50);
       });
 
-      // Toggle Theme
       document.getElementById("act-theme").addEventListener("click", () => {
         document.body.classList.toggle("matrix-theme");
       });
 
-      // New File
       document.getElementById("btn-new-file").addEventListener("click", () => {
         const name = prompt("Enter new filename (e.g. script.py):");
         if (name && name.trim()) {
@@ -1335,7 +1341,6 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Reset Starter Files
       document.getElementById("btn-reset-starter").addEventListener("click", () => {
         if (confirm("Reset workspace to default starter template?")) {
           files = { ...DEFAULT_FILES };
@@ -1345,7 +1350,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         }
       });
 
-      // Touch Accessory Bar Insert
+      // Accessory Keys
       document.querySelectorAll(".acc-key").forEach(btn => {
         btn.addEventListener("click", () => {
           const insertText = btn.getAttribute("data-insert");
@@ -1356,7 +1361,7 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
         });
       });
 
-      // Panel Resizer Dragging
+      // Panel Resizer
       const resizer = document.getElementById("panel-resizer");
       let isResizing = false;
       let startY = 0;
@@ -1394,21 +1399,29 @@ print("Fibonacci sequence (12 items):", fibonacci(12))
       resizer.addEventListener("mousedown", onPointerDown);
       resizer.addEventListener("touchstart", onPointerDown, { passive: true });
 
-      // Window resize refresh
       window.addEventListener("resize", () => {
         if (editor && editor.refresh) editor.refresh();
       });
 
-      // Keyboard shortcuts: Ctrl+Enter or Cmd+Enter to Run
       window.addEventListener("keydown", (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           e.preventDefault();
           runCode();
         }
       });
+
+      // 3. Asynchronously load CodeMirror and Pyodide in background
+      loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js", () => {
+        loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js", () => {
+          upgradeToCodeMirror();
+        });
+      });
+
+      loadScriptAsync("https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js", () => {
+        initPyodideWasm();
+      });
     });
 
-    // Android Back button helper
     window.handleAndroidBack = function() {
       const sidebar = document.getElementById("sidebar-container");
       if (!sidebar.classList.contains("collapsed")) {

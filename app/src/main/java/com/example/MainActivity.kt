@@ -45,15 +45,6 @@ import com.example.ui.theme.VsCodeDarkBg
 
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        init {
-            try {
-                android.system.Os.setenv("LIBGL_ALWAYS_SOFTWARE", "1", true)
-            } catch (_: Throwable) {
-            }
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -126,6 +117,13 @@ fun RdeAppScreen(activity: Activity) {
 
                     // WebChromeClient to handle alert, confirm, and prompt dialogs
                     webChromeClient = object : WebChromeClient() {
+                        override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                            consoleMessage?.let {
+                                android.util.Log.d("RDE_JS", "[${it.messageLevel()}] ${it.message()} -- line ${it.lineNumber()} of ${it.sourceId()}")
+                            }
+                            return true
+                        }
+
                         override fun onJsAlert(
                             view: WebView?,
                             url: String?,
