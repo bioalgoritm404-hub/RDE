@@ -1,0 +1,6 @@
+{
+  "name": "RDE",
+  "description": "RayVen Development Environment - Mobile-first VS Code Dark+ Python IDE with Pyodide Wasm engine",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
