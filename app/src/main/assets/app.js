@@ -21,7 +21,7 @@ const I18N = {
     terminal: "TERMINAL (REPL)",
     type: "Type",
     hide: "Hide",
-    settingsTitle: "⚙️ Settings",
+    settingsTitle: "Settings",
     themeTitle: "Color Theme",
     kbTitle: "Keyboard Mode",
     langTitle: "Language",
@@ -47,7 +47,7 @@ const I18N = {
     terminal: "ТЕРМИНАЛ (REPL)",
     type: "Ввод",
     hide: "Скрыть",
-    settingsTitle: "⚙️ Настройки",
+    settingsTitle: "Настройки",
     themeTitle: "Цветовая тема",
     kbTitle: "Режим клавиатуры",
     langTitle: "Язык интерфейса",
@@ -141,8 +141,8 @@ RAVEN_ART = r"""
 
 def main():
     print(RAVEN_ART)
-    print(f"🐍 Python version: {sys.version.split()[0]}")
-    print("⚡ Real-time execution ready!")
+    print(f"[RDE] Python version: {sys.version.split()[0]}")
+    print("[RDE] Real-time Wasm execution ready!")
     print("-" * 45)
     numbers = [12, 45, 78, 23, 56, 89, 90, 34]
     print(f"Numbers: {numbers}")
@@ -193,14 +193,14 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 </head>
 <body>
   <div class="card">
-    <h2>⚡ RayVen Web Preview</h2>
+    <h2>RayVen Web Preview</h2>
     <p>Live HTML + CSS + JS is working seamlessly!</p>
     <button onclick="greet()">Click Me</button>
     <p id="msg" style="color: #00e5ff; margin-top: 10px;"></p>
   </div>
   <script>
     function greet() {
-      document.getElementById('msg').textContent = 'Hello from RDE Web Engine! 🎉 Time: ' + new Date().toLocaleTimeString();
+      document.getElementById('msg').textContent = 'Hello from RDE Web Engine! Time: ' + new Date().toLocaleTimeString();
     }
   </script>
 </body>
@@ -322,9 +322,13 @@ function setupDeviceFileIntegration() {
     fileInput.click();
   });
 
-  // Open folder button trigger
+  // Open folder button trigger (SAF Android Directory Picker)
   document.getElementById("btn-open-device-folder")?.addEventListener("click", () => {
-    folderInput ? folderInput.click() : fileInput.click();
+    if (window.AndroidBridge && typeof window.AndroidBridge.openDirectoryPicker === "function") {
+      window.AndroidBridge.openDirectoryPicker();
+    } else {
+      folderInput ? folderInput.click() : fileInput.click();
+    }
   });
 
   // Save current file button
@@ -332,6 +336,25 @@ function setupDeviceFileIntegration() {
     saveCurrentFileToDevice(currentFileName);
   });
 }
+
+// Native SAF Folder Loaded Callback from Android Kotlin
+window.onNativeFolderLoaded = function(rootName, filesMap) {
+  if (!filesMap || typeof filesMap !== "object") return;
+  const keys = Object.keys(filesMap);
+  if (keys.length === 0) return;
+
+  files = filesMap;
+  saveStoredFiles(files);
+
+  const firstToOpen = keys.find(k => k.endsWith(".py") || k.endsWith(".html")) || keys[0];
+  switchToFile(firstToOpen);
+  hideWelcomeView();
+
+  appendOutputText(`[Workspace] Opened folder: ${rootName} (${keys.length} files)\n`, "success");
+  if (window.AndroidBridge && typeof window.AndroidBridge.showToast === "function") {
+    window.AndroidBridge.showToast(`Workspace: ${rootName} (${keys.length} files)`);
+  }
+};
 
 function saveCurrentFileToDevice(targetName) {
   const content = editor ? editor.getValue() : (files[currentFileName] || "");
@@ -369,11 +392,11 @@ function updateRunButtonLabel() {
   const isHtml = currentFileName.toLowerCase().endsWith(".html");
   if (isHtml) {
     runBtn.classList.add("preview-mode");
-    runIcon.textContent = "🌐";
+    runIcon.innerHTML = ICONS.previewGlobe;
     runLabel.textContent = t.preview;
   } else {
     runBtn.classList.remove("preview-mode");
-    runIcon.textContent = isExecuting ? "⏳" : "▶";
+    runIcon.innerHTML = isExecuting ? ICONS.refresh : ICONS.play;
     runLabel.textContent = isExecuting ? t.running : t.run;
   }
 }
@@ -975,7 +998,7 @@ async function runCode() {
 
   isExecuting = true;
   runBtn.classList.add("running");
-  runIcon.textContent = "⏳";
+  runIcon.innerHTML = ICONS.refresh;
   runLabel.textContent = t.running;
   statusDot.className = "status-dot running";
   statusText.textContent = "Executing...";
@@ -1000,8 +1023,83 @@ async function runCode() {
     updateRunButtonLabel();
     statusDot.className = "status-dot ready";
     statusText.textContent = "Python 3.12 (Ready)";
-    execStat.textContent = `⏱️ Exec: ${duration}ms`;
+    execStat.textContent = `Exec: ${duration}ms`;
     if (!hasError) appendOutputText(`[Done] Exited with code=0 in ${(duration / 1000).toFixed(3)}s\n`, "success");
+  }
+}
+
+// --- 10.5 PIP PACKAGE MANAGER (MICROPIP) ---
+let installedPipPackages = JSON.parse(localStorage.getItem("rde_installed_pip_v2") || '["micropip"]');
+
+function addInstalledPackage(pkg) {
+  const clean = pkg.trim().toLowerCase();
+  if (!installedPipPackages.includes(clean)) {
+    installedPipPackages.push(clean);
+    localStorage.setItem("rde_installed_pip_v2", JSON.stringify(installedPipPackages));
+  }
+  renderInstalledPipList();
+}
+
+function renderInstalledPipList() {
+  const container = document.getElementById("pip-installed-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (installedPipPackages.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-muted); padding:10px 0; font-size:11.5px;">No packages installed yet.</div>`;
+    return;
+  }
+
+  installedPipPackages.forEach(pkg => {
+    const card = document.createElement("div");
+    card.className = "extension-card";
+    card.style.padding = "7px 12px";
+    card.innerHTML = `
+      <div class="ext-header">
+        <div class="ext-title-group">
+          <span style="display:flex;align-items:center;color:var(--accent-cyan);">${ICONS.boxPackage}</span>
+          <span class="ext-title" style="font-size:12.5px;">${pkg}</span>
+        </div>
+        <div style="font-size:10px; color:#23d18b; font-weight:700; letter-spacing:0.5px;">INSTALLED</div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function runPipInstall(rawPkg) {
+  if (!rawPkg || !rawPkg.trim()) return;
+  const pkgName = rawPkg.trim().replace(/^pip\s+install\s+/i, "").trim().toLowerCase();
+  if (!pkgName) return;
+
+  const bottomPanel = document.getElementById("bottom-panel");
+  if (bottomPanel.classList.contains("collapsed")) bottomPanel.classList.remove("collapsed");
+  showPanelTab("terminal");
+
+  appendReplLog(`pip install ${pkgName}`, "prompt");
+
+  if (isPyodideLoading || !pyodideInstance) {
+    appendReplLog(`[pip error] Pyodide Python engine is still initializing. Please wait a moment...`, "stderr");
+    return;
+  }
+
+  appendReplLog(`[pip] Resolving package: ${pkgName}...`, "info");
+  appendReplLog(`[pip] Downloading and preparing wheel for ${pkgName}...`, "stdout");
+
+  try {
+    await pyodideInstance.loadPackage("micropip");
+    await pyodideInstance.runPythonAsync(`
+import micropip
+await micropip.install('${pkgName}')
+    `);
+    appendReplLog(`[pip] Unpacking and verifying dependencies...`, "stdout");
+    appendReplLog(`[pip] Successfully installed ${pkgName}!`, "success");
+    addInstalledPackage(pkgName);
+    if (window.AndroidBridge && typeof window.AndroidBridge.showToast === "function") {
+      window.AndroidBridge.showToast(`pip: ${pkgName} installed successfully`);
+    }
+  } catch (err) {
+    appendReplLog(`[pip error] ${err.message || err}`, "stderr");
   }
 }
 
@@ -1035,7 +1133,7 @@ function renderRecentList() {
     const fileName = typeof item === "string" ? item : item.name;
     const row = document.createElement("div");
     row.className = "recent-item";
-    const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(fileName) : "📄";
+    const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(fileName) : ICONS.text;
     row.innerHTML = `
       <div class="recent-name">
         <span style="display:flex;align-items:center;">${iconSvg}</span>
@@ -1167,7 +1265,7 @@ function renderTreeBranch(node, container) {
 
       const left = document.createElement("div");
       left.className = "file-item-left";
-      const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(item.name) : "📄";
+      const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(item.name) : ICONS.text;
       left.innerHTML = `<span style="display:flex;align-items:center;">${iconSvg}</span><span>${item.name}</span>`;
       left.onclick = () => {
         hideWelcomeView();
@@ -1483,37 +1581,91 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // REPL Send
+  // REPL Send & Pip Interceptor
   const replInput = document.getElementById("repl-input");
   const replHistory = document.getElementById("repl-history");
+
+  function appendReplLog(text, type = "stdout") {
+    if (!replHistory) return;
+    const line = document.createElement("div");
+    if (type === "prompt") {
+      line.innerHTML = `<span style="color:var(--accent-cyan); font-weight:bold;">&gt;&gt;&gt;</span> <span>${text}</span>`;
+    } else if (type === "stderr") {
+      line.style.color = "var(--accent-red)";
+      line.textContent = text;
+    } else if (type === "success") {
+      line.style.color = "#23d18b";
+      line.style.fontWeight = "bold";
+      line.textContent = text;
+    } else if (type === "info") {
+      line.style.color = "var(--accent-cyan)";
+      line.textContent = text;
+    } else {
+      line.style.color = "#dcdcdc";
+      line.textContent = text;
+    }
+    replHistory.appendChild(line);
+    replHistory.scrollTop = replHistory.scrollHeight;
+  }
+
   const sendRepl = async () => {
     const cmd = replInput.value.trim();
     if (!cmd) return;
     replInput.value = "";
-    const line = document.createElement("div");
-    line.innerHTML = `<span style="color:var(--accent-cyan); font-weight:bold;">&gt;&gt;&gt;</span> <span>${cmd}</span>`;
-    replHistory.appendChild(line);
+
+    // Intercept pip install command
+    if (cmd.toLowerCase().startsWith("pip install ")) {
+      runPipInstall(cmd);
+      return;
+    }
+
+    appendReplLog(cmd, "prompt");
 
     if (pyodideInstance) {
       try {
         const res = await pyodideInstance.runPythonAsync(cmd);
         if (res !== undefined) {
-          const resEl = document.createElement("div");
-          resEl.style.color = "#23d18b";
-          resEl.textContent = String(res);
-          replHistory.appendChild(resEl);
+          appendReplLog(String(res), "success");
         }
       } catch (e) {
-        const errEl = document.createElement("div");
-        errEl.style.color = "var(--accent-red)";
-        errEl.textContent = e.message;
-        replHistory.appendChild(errEl);
+        appendReplLog(e.message, "stderr");
       }
     }
-    replHistory.scrollTop = replHistory.scrollHeight;
   };
   document.getElementById("btn-repl-send").addEventListener("click", sendRepl);
   replInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendRepl(); } });
+
+  // Packages Modal Listeners
+  const packagesModal = document.getElementById("packages-modal");
+  document.getElementById("btn-open-packages")?.addEventListener("click", () => {
+    packagesModal.style.display = "flex";
+    renderInstalledPipList();
+  });
+  document.getElementById("act-packages")?.addEventListener("click", () => {
+    packagesModal.style.display = "flex";
+    renderInstalledPipList();
+  });
+  document.getElementById("btn-close-packages")?.addEventListener("click", () => {
+    packagesModal.style.display = "none";
+  });
+  document.getElementById("btn-pip-install-submit")?.addEventListener("click", () => {
+    const input = document.getElementById("pip-package-input");
+    if (input && input.value) {
+      const val = input.value.trim();
+      input.value = "";
+      packagesModal.style.display = "none";
+      runPipInstall(val);
+    }
+  });
+  document.querySelectorAll(".btn-quick-pkg").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const pkg = btn.getAttribute("data-pkg");
+      if (pkg) {
+        packagesModal.style.display = "none";
+        runPipInstall(pkg);
+      }
+    });
+  });
 
   // Resizer
   const resizer = document.getElementById("panel-resizer");
@@ -1568,6 +1720,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.handleAndroidBack = function() {
+  const packagesModal = document.getElementById("packages-modal");
+  if (packagesModal && packagesModal.style.display === "flex") {
+    packagesModal.style.display = "none";
+    return true;
+  }
   const welcomeView = document.getElementById("welcome-view");
   if (welcomeView && welcomeView.style.display === "block") {
     welcomeView.style.display = "none";

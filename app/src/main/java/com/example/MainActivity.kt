@@ -49,6 +49,7 @@ import java.io.File
 
 class MainActivity : ComponentActivity() {
 
+    var currentWebView: WebView? = null
     var fileChooserCallback: ValueCallback<Array<Uri>>? = null
 
     val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -60,6 +61,67 @@ class MainActivity : ComponentActivity() {
             fileChooserCallback?.onReceiveValue(null)
         }
         fileChooserCallback = null
+    }
+
+    val openDirectoryLauncher = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            try {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (_: Exception) {}
+            loadDirectoryTree(uri)
+        }
+    }
+
+    private fun loadDirectoryTree(treeUri: Uri) {
+        val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri) ?: return
+        val rootName = rootDoc.name ?: "Workspace"
+        Toast.makeText(this, "Reading folder: $rootName...", Toast.LENGTH_SHORT).show()
+
+        Thread {
+            val filesMap = org.json.JSONObject()
+            readDocumentDirectory(rootDoc, "", filesMap, 0)
+
+            runOnUiThread {
+                val jsonString = filesMap.toString()
+                currentWebView?.evaluateJavascript(
+                    "if (window.onNativeFolderLoaded) { window.onNativeFolderLoaded(${org.json.JSONObject.quote(rootName)}, $jsonString); }",
+                    null
+                )
+                Toast.makeText(this, "Loaded: $rootName (${filesMap.length()} files)", Toast.LENGTH_SHORT).show()
+            }
+        }.start()
+    }
+
+    private fun readDocumentDirectory(
+        dir: androidx.documentfile.provider.DocumentFile,
+        currentPath: String,
+        result: org.json.JSONObject,
+        depth: Int
+    ) {
+        if (depth > 5) return // prevent excessive recursion
+        val children = dir.listFiles()
+        for (child in children) {
+            val name = child.name ?: continue
+            if (name.startsWith(".") && name != ".env") continue // skip hidden/.git files
+
+            val relPath = if (currentPath.isEmpty()) name else "$currentPath/$name"
+            if (child.isDirectory) {
+                readDocumentDirectory(child, relPath, result, depth + 1)
+            } else if (child.isFile) {
+                // Read text files up to 512KB
+                if (child.length() < 512 * 1024) {
+                    try {
+                        contentResolver.openInputStream(child.uri)?.use { stream ->
+                            val text = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                            result.put(relPath, text)
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -115,6 +177,7 @@ fun RdeAppScreen(activity: Activity) {
                     isFocusable = true
                     isFocusableInTouchMode = true
                     webViewRef = this
+                    (activity as? MainActivity)?.currentWebView = this
 
                     settings.apply {
                         javaScriptEnabled = true
@@ -260,6 +323,13 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
     fun onCodeRunFinished() {
         activity.runOnUiThread {
             vibrateDevice(activity, 20)
+        }
+    }
+
+    @JavascriptInterface
+    fun openDirectoryPicker() {
+        activity.runOnUiThread {
+            (activity as? MainActivity)?.openDirectoryLauncher?.launch(null)
         }
     }
 

@@ -16,14 +16,14 @@
       author: "RayVen Team",
       version: "1.2.0",
       description: "Chill lo-fi music stream directly in your IDE for deep coding focus.",
-      icon: "🎵",
+      icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
       isInstalled: true,
       isEnabled: true,
       init: function(api) {
         api.addToolbarButton({
           id: "btn-lofi-toggle",
           title: "Lo-Fi Background Coding Radio",
-          iconHtml: ICONS ? ICONS.lofiRadio : "🎵",
+          iconHtml: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>`,
           onClick: () => api.toggleLofiRadio()
         });
       },
@@ -42,7 +42,7 @@
       author: "PythonDev",
       version: "1.0.4",
       description: "Cleans trailing spaces, fixes 4-space indentations, and tidies blank lines.",
-      icon: "✨",
+      icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h14"/></svg>`,
       isInstalled: true,
       isEnabled: true,
       init: function(api) {
@@ -53,7 +53,6 @@
           onClick: () => {
             const raw = api.getEditorContent();
             if (!raw) return;
-            // Trim trailing spaces and standardize newlines
             const formatted = raw
               .split("\n")
               .map(line => line.trimEnd())
@@ -74,7 +73,7 @@
       author: "DevTools",
       version: "1.1.0",
       description: "Quick insert templates for classes, try-except, lambda, and async functions.",
-      icon: "⚡",
+      icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
       isInstalled: false,
       isEnabled: false,
       init: function(api) {
@@ -105,7 +104,7 @@
       author: "Algorithms Lab",
       version: "1.0.1",
       description: "Sort selected lines alphabetically and remove duplicate entries.",
-      icon: "📶",
+      icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg>`,
       isInstalled: false,
       isEnabled: false,
       init: function(api) {
@@ -296,7 +295,7 @@
     }
     const stat = document.getElementById("sb-plugin-stat");
     if (stat) {
-      stat.textContent = isLofiPlaying ? "🎵 Lo-Fi ON" : "⏱️ Exec: 0ms";
+      stat.textContent = isLofiPlaying ? "Lo-Fi ON" : "Exec: 0ms";
     }
   }
 
