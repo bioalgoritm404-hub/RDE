@@ -71,13 +71,14 @@ function loadAppSettings() {
         theme: parsed.theme || "cyberfox",
         keyboardMode: parsed.keyboardMode || "builtin",
         language: parsed.language || "ru",
-        lofiEnabled: parsed.lofiEnabled !== false
+        lofiEnabled: parsed.lofiEnabled !== false,
+        showWelcomeOnStartup: parsed.showWelcomeOnStartup !== false
       };
     }
   } catch (e) {
     console.warn("Settings load error:", e);
   }
-  return { theme: "cyberfox", keyboardMode: "builtin", language: "ru", lofiEnabled: true };
+  return { theme: "cyberfox", keyboardMode: "builtin", language: "ru", lofiEnabled: true, showWelcomeOnStartup: true };
 }
 
 function saveAppSettings() {
@@ -257,11 +258,12 @@ function saveStoredFiles(f) {
   }
 }
 
-// --- 4. REAL DEVICE FILE INTEGRATION (OPEN / SAVE TO DOWNLOADS) ---
+// --- 4. REAL DEVICE FILE & FOLDER INTEGRATION (OPEN / SAVE TO DOWNLOADS) ---
 function setupDeviceFileIntegration() {
   const fileInput = document.getElementById("device-file-input");
+  const folderInput = document.getElementById("device-folder-input");
 
-  // Open file from phone memory
+  // Open single file from phone memory
   fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -282,24 +284,52 @@ function setupDeviceFileIntegration() {
     fileInput.value = "";
   });
 
-  // Open button trigger
-  document.getElementById("btn-open-device-file").addEventListener("click", () => {
+  // Open whole folder/workspace from device
+  if (folderInput) {
+    folderInput.addEventListener("change", (e) => {
+      const selectedFiles = Array.from(e.target.files);
+      if (!selectedFiles || selectedFiles.length === 0) return;
+
+      let loadedCount = 0;
+      let firstFileToOpen = null;
+
+      selectedFiles.forEach(file => {
+        const path = file.webkitRelativePath || file.name;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          files[path] = event.target.result;
+          loadedCount++;
+          if (!firstFileToOpen && (path.endsWith(".py") || path.endsWith(".html"))) {
+            firstFileToOpen = path;
+          }
+          if (loadedCount === selectedFiles.length) {
+            saveStoredFiles(files);
+            switchToFile(firstFileToOpen || path);
+            appendOutputText(`[Workspace] Opened folder with ${selectedFiles.length} files.\n`, "success");
+            if (window.AndroidBridge && typeof window.AndroidBridge.showToast === "function") {
+              window.AndroidBridge.showToast(`Workspace: ${selectedFiles.length} files loaded`);
+            }
+          }
+        };
+        reader.readAsText(file);
+      });
+      folderInput.value = "";
+    });
+  }
+
+  // Open file button trigger
+  document.getElementById("btn-open-device-file")?.addEventListener("click", () => {
     fileInput.click();
   });
 
-  // Save current file button
-  document.getElementById("btn-save-device-file").addEventListener("click", () => {
-    saveCurrentFileToDevice(currentFileName);
+  // Open folder button trigger
+  document.getElementById("btn-open-device-folder")?.addEventListener("click", () => {
+    folderInput ? folderInput.click() : fileInput.click();
   });
 
-  // Save As button
-  document.getElementById("btn-save-as-device-file").addEventListener("click", () => {
-    const t = I18N[appSettings.language] || I18N.ru;
-    const newName = prompt(t.enterFileName, currentFileName);
-    if (newName && newName.trim()) {
-      const clean = newName.trim();
-      saveCurrentFileToDevice(clean);
-    }
+  // Save current file button
+  document.getElementById("btn-save-device-file")?.addEventListener("click", () => {
+    saveCurrentFileToDevice(currentFileName);
   });
 }
 
@@ -975,49 +1005,211 @@ async function runCode() {
   }
 }
 
-// --- 11. FILE EXPLORER UI ---
+// --- 11. TREE VIEW EXPLORER & RECENT FILES ---
+let collapsedFolders = new Set(JSON.parse(localStorage.getItem("rde_collapsed_folders_v1") || "[]"));
+let recentFiles = JSON.parse(localStorage.getItem("rde_recent_files_v1") || "[]");
+
+function addRecentFile(filePath) {
+  if (!filePath) return;
+  recentFiles = recentFiles.filter(item => (typeof item === "string" ? item : item.path) !== filePath);
+  recentFiles.unshift({ path: filePath, name: filePath.split("/").pop(), time: Date.now() });
+  if (recentFiles.length > 8) recentFiles.pop();
+  try {
+    localStorage.setItem("rde_recent_files_v1", JSON.stringify(recentFiles));
+  } catch (_) {}
+  renderRecentList();
+}
+
+function renderRecentList() {
+  const container = document.getElementById("welcome-recent-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (recentFiles.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-muted); font-size:11.5px; padding:6px 0;">No recent files yet.</div>`;
+    return;
+  }
+
+  recentFiles.forEach(item => {
+    const filePath = typeof item === "string" ? item : item.path;
+    const fileName = typeof item === "string" ? item : item.name;
+    const row = document.createElement("div");
+    row.className = "recent-item";
+    const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(fileName) : "📄";
+    row.innerHTML = `
+      <div class="recent-name">
+        <span style="display:flex;align-items:center;">${iconSvg}</span>
+        <span>${fileName}</span>
+      </div>
+      <div class="recent-path">${filePath}</div>
+    `;
+    row.onclick = () => {
+      hideWelcomeView();
+      switchToFile(filePath);
+    };
+    container.appendChild(row);
+  });
+}
+
+function showWelcomeView() {
+  const wv = document.getElementById("welcome-view");
+  if (wv) {
+    renderRecentList();
+    wv.style.display = "block";
+  }
+}
+
+function hideWelcomeView() {
+  const wv = document.getElementById("welcome-view");
+  if (wv) wv.style.display = "none";
+}
+
+function toggleFolder(folderPath) {
+  if (collapsedFolders.has(folderPath)) {
+    collapsedFolders.delete(folderPath);
+  } else {
+    collapsedFolders.add(folderPath);
+  }
+  try {
+    localStorage.setItem("rde_collapsed_folders_v1", JSON.stringify(Array.from(collapsedFolders)));
+  } catch (_) {}
+  renderFileTree();
+}
+
+function buildTreeStructure(filesMap) {
+  const root = { name: "", path: "", isFolder: true, children: {} };
+  Object.keys(filesMap).forEach(filePath => {
+    const parts = filePath.split("/");
+    let current = root;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isFile = (i === parts.length - 1);
+      const currentPath = parts.slice(0, i + 1).join("/");
+      if (!current.children[part]) {
+        current.children[part] = {
+          name: part,
+          path: currentPath,
+          isFolder: !isFile,
+          children: {}
+        };
+      }
+      current = current.children[part];
+    }
+  });
+  return root;
+}
+
+function renderTreeBranch(node, container) {
+  const t = I18N[appSettings.language] || I18N.ru;
+  const sortedKeys = Object.keys(node.children).sort((a, b) => {
+    const aIsFolder = node.children[a].isFolder;
+    const bIsFolder = node.children[b].isFolder;
+    if (aIsFolder && !bIsFolder) return -1;
+    if (!aIsFolder && bIsFolder) return 1;
+    return a.localeCompare(b);
+  });
+
+  sortedKeys.forEach(key => {
+    const item = node.children[key];
+    if (item.isFolder) {
+      const isCollapsed = collapsedFolders.has(item.path);
+      const folderEl = document.createElement("div");
+      folderEl.className = `tree-folder ${isCollapsed ? "collapsed" : ""}`;
+
+      const header = document.createElement("div");
+      header.className = "tree-folder-header";
+      header.onclick = () => toggleFolder(item.path);
+
+      const left = document.createElement("div");
+      left.className = "tree-folder-left";
+      const chevron = isCollapsed ? ICONS.chevronRight : ICONS.chevronDown;
+      const folderIcon = isCollapsed ? ICONS.folder : ICONS.folderOpen;
+      left.innerHTML = `
+        <span class="tree-chevron">${chevron}</span>
+        <span style="display:flex;align-items:center;">${folderIcon}</span>
+        <span>${item.name}</span>
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "file-item-actions";
+
+      // Add new file in folder
+      const btnAddInFolder = document.createElement("button");
+      btnAddInFolder.className = "file-action-btn";
+      btnAddInFolder.title = t.newFile;
+      btnAddInFolder.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`;
+      btnAddInFolder.onclick = (e) => {
+        e.stopPropagation();
+        const fName = prompt(t.enterFileName);
+        if (fName && fName.trim()) {
+          const fullPath = `${item.path}/${fName.trim()}`;
+          files[fullPath] = fName.endsWith(".html") ? DEFAULT_HTML : `# ${fName}\n`;
+          saveStoredFiles(files);
+          switchToFile(fullPath);
+        }
+      };
+
+      actions.appendChild(btnAddInFolder);
+      header.appendChild(left);
+      header.appendChild(actions);
+      folderEl.appendChild(header);
+
+      const childrenEl = document.createElement("div");
+      childrenEl.className = "tree-folder-children";
+      renderTreeBranch(item, childrenEl);
+      folderEl.appendChild(childrenEl);
+
+      container.appendChild(folderEl);
+    } else {
+      // File Leaf
+      const fileEl = document.createElement("div");
+      fileEl.className = `file-tree-item ${item.path === currentFileName ? "active" : ""}`;
+
+      const left = document.createElement("div");
+      left.className = "file-item-left";
+      const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(item.name) : "📄";
+      left.innerHTML = `<span style="display:flex;align-items:center;">${iconSvg}</span><span>${item.name}</span>`;
+      left.onclick = () => {
+        hideWelcomeView();
+        switchToFile(item.path);
+      };
+
+      const actions = document.createElement("div");
+      actions.className = "file-item-actions";
+
+      const btnRename = document.createElement("button");
+      btnRename.className = "file-action-btn";
+      btnRename.title = t.rename;
+      btnRename.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
+      btnRename.onclick = (e) => { e.stopPropagation(); renameFile(item.path); };
+
+      const btnDelete = document.createElement("button");
+      btnDelete.className = "file-action-btn";
+      btnDelete.title = t.delete;
+      btnDelete.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+      btnDelete.onclick = (e) => { e.stopPropagation(); deleteFile(item.path); };
+
+      actions.appendChild(btnRename);
+      actions.appendChild(btnDelete);
+      fileEl.appendChild(left);
+      fileEl.appendChild(actions);
+      container.appendChild(fileEl);
+    }
+  });
+}
+
 function renderFileTree() {
   const container = document.getElementById("file-tree-container");
+  if (!container) return;
   container.innerHTML = "";
-  const t = I18N[appSettings.language] || I18N.ru;
-
-  Object.keys(files).forEach(fileName => {
-    const item = document.createElement("div");
-    item.className = `file-tree-item ${fileName === currentFileName ? "active" : ""}`;
-
-    const left = document.createElement("div");
-    left.className = "file-item-left";
-    const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(fileName) : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9da5b4" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>`;
-    left.innerHTML = `<span style="display:flex;align-items:center;">${iconSvg}</span><span>${fileName}</span>`;
-    left.onclick = () => switchToFile(fileName);
-
-    const actions = document.createElement("div");
-    actions.className = "file-item-actions";
-
-    const btnRename = document.createElement("button");
-    btnRename.className = "file-action-btn";
-    btnRename.title = t.rename;
-    btnRename.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>`;
-    btnRename.onclick = (e) => { e.stopPropagation(); renameFile(fileName); };
-
-    const btnDelete = document.createElement("button");
-    btnDelete.className = "file-action-btn";
-    btnDelete.title = t.delete;
-    btnDelete.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-    btnDelete.onclick = (e) => { e.stopPropagation(); deleteFile(fileName); };
-
-    actions.appendChild(btnRename);
-    actions.appendChild(btnDelete);
-    item.appendChild(left);
-    item.appendChild(actions);
-    container.appendChild(item);
-  });
+  const tree = buildTreeStructure(files);
+  renderTreeBranch(tree, container);
 }
 
 function switchToFile(fileName) {
   if (!files[fileName]) return;
   currentFileName = fileName;
-  document.getElementById("tab-filename").textContent = fileName;
+  document.getElementById("tab-filename").textContent = fileName.split("/").pop();
   const tabIcon = document.getElementById("tab-file-icon");
   if (tabIcon && typeof getFileIconSvg === "function") {
     tabIcon.innerHTML = getFileIconSvg(fileName);
@@ -1027,6 +1219,7 @@ function switchToFile(fileName) {
     editor.setOption("mode", fileName.toLowerCase().endsWith(".html") ? "htmlmixed" : "python");
   }
   saveStoredFiles(files);
+  addRecentFile(fileName);
   updateRunButtonLabel();
   if (editor.refresh) setTimeout(() => editor.refresh(), 30);
   renderFileTree();
@@ -1181,7 +1374,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (editor && editor.refresh) setTimeout(() => editor.refresh(), 30);
   });
 
-  document.getElementById("btn-new-file").addEventListener("click", () => {
+  document.getElementById("btn-new-file")?.addEventListener("click", () => {
     const t = I18N[appSettings.language] || I18N.ru;
     const name = prompt(t.enterFileName);
     if (name && name.trim()) {
@@ -1193,8 +1386,76 @@ window.addEventListener("DOMContentLoaded", () => {
       } else {
         switchToFile(clean);
       }
+      hideWelcomeView();
     }
   });
+
+  document.getElementById("btn-new-folder")?.addEventListener("click", () => {
+    const folderName = prompt("Enter folder name (e.g. src or utils):");
+    if (folderName && folderName.trim()) {
+      const cleanFolder = folderName.trim().replace(/\/+$/, "");
+      const placeholder = `${cleanFolder}/main.py`;
+      if (!files[placeholder]) {
+        files[placeholder] = `# Package: ${cleanFolder}\n\ndef init():\n    pass\n`;
+        saveStoredFiles(files);
+        switchToFile(placeholder);
+      }
+      hideWelcomeView();
+    }
+  });
+
+  // Welcome Page Event Listeners
+  document.getElementById("btn-show-welcome-logo")?.addEventListener("click", () => {
+    showWelcomeView();
+  });
+
+  document.getElementById("welcome-btn-new-file")?.addEventListener("click", () => {
+    document.getElementById("btn-new-file")?.click();
+  });
+
+  document.getElementById("welcome-btn-open-file")?.addEventListener("click", () => {
+    hideWelcomeView();
+    document.getElementById("btn-open-device-file")?.click();
+  });
+
+  document.getElementById("welcome-btn-open-folder")?.addEventListener("click", () => {
+    hideWelcomeView();
+    document.getElementById("btn-open-device-folder")?.click();
+  });
+
+  document.getElementById("welcome-btn-tpl-py")?.addEventListener("click", () => {
+    const tplName = "calculator.py";
+    if (!files[tplName]) {
+      files[tplName] = `# Math & Statistics Calculator\nimport math\n\ndef calc(a, b, op):\n    if op == '+': return a + b\n    if op == '-': return a - b\n    if op == '*': return a * b\n    if op == '/': return a / b if b != 0 else 'Error'\n\nprint("24 * 7 =", calc(24, 7, '*'))\nprint("Hypotenuse (3, 4) =", math.hypot(3, 4))\n`;
+    }
+    saveStoredFiles(files);
+    hideWelcomeView();
+    switchToFile(tplName);
+  });
+
+  document.getElementById("welcome-btn-tpl-web")?.addEventListener("click", () => {
+    const tplName = "app.html";
+    if (!files[tplName]) {
+      files[tplName] = DEFAULT_HTML;
+    }
+    saveStoredFiles(files);
+    hideWelcomeView();
+    switchToFile(tplName);
+  });
+
+  const chkWelcome = document.getElementById("chk-show-welcome-on-startup");
+  if (chkWelcome) {
+    chkWelcome.checked = appSettings.showWelcomeOnStartup !== false;
+    chkWelcome.addEventListener("change", () => {
+      appSettings.showWelcomeOnStartup = chkWelcome.checked;
+      saveAppSettings();
+    });
+  }
+
+  // Show Welcome on startup if enabled
+  if (appSettings.showWelcomeOnStartup) {
+    showWelcomeView();
+  }
 
   // Quick accessory bar keys
   document.querySelectorAll(".acc-key[data-insert]").forEach(btn => {
@@ -1307,6 +1568,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.handleAndroidBack = function() {
+  const welcomeView = document.getElementById("welcome-view");
+  if (welcomeView && welcomeView.style.display === "block") {
+    welcomeView.style.display = "none";
+    return true;
+  }
   const marketplaceModal = document.getElementById("marketplace-modal");
   if (marketplaceModal && marketplaceModal.style.display === "flex") {
     marketplaceModal.style.display = "none";
