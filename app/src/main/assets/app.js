@@ -987,10 +987,8 @@ function renderFileTree() {
 
     const left = document.createElement("div");
     left.className = "file-item-left";
-    let icon = "📄";
-    if (fileName.endsWith(".py")) icon = "🐍";
-    else if (fileName.endsWith(".html")) icon = "🌐";
-    left.innerHTML = `<span>${icon}</span><span>${fileName}</span>`;
+    const iconSvg = typeof getFileIconSvg === "function" ? getFileIconSvg(fileName) : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9da5b4" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>`;
+    left.innerHTML = `<span style="display:flex;align-items:center;">${iconSvg}</span><span>${fileName}</span>`;
     left.onclick = () => switchToFile(fileName);
 
     const actions = document.createElement("div");
@@ -1020,6 +1018,10 @@ function switchToFile(fileName) {
   if (!files[fileName]) return;
   currentFileName = fileName;
   document.getElementById("tab-filename").textContent = fileName;
+  const tabIcon = document.getElementById("tab-file-icon");
+  if (tabIcon && typeof getFileIconSvg === "function") {
+    tabIcon.innerHTML = getFileIconSvg(fileName);
+  }
   editor.setValue(files[fileName]);
   if (editor.setOption) {
     editor.setOption("mode", fileName.toLowerCase().endsWith(".html") ? "htmlmixed" : "python");
@@ -1305,6 +1307,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.handleAndroidBack = function() {
+  const marketplaceModal = document.getElementById("marketplace-modal");
+  if (marketplaceModal && marketplaceModal.style.display === "flex") {
+    marketplaceModal.style.display = "none";
+    return true;
+  }
   const previewModal = document.getElementById("preview-modal");
   if (previewModal && previewModal.style.display === "flex") {
     previewModal.style.display = "none";

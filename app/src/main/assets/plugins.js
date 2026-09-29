@@ -1,20 +1,170 @@
 /**
- * RDE Plugin System Architecture (window.rdeAPI)
+ * RDE Plugin System & Marketplace (window.rdeAPI)
  */
 (function() {
-  const plugins = new Map();
+  const activePlugins = new Map();
   let lofiAudio = null;
   let isLofiPlaying = false;
 
+  // --- MARKETPLACE CATALOG ---
+  const MARKETPLACE_STORAGE_KEY = "rde_marketplace_plugins_v1";
+
+  const DEFAULT_CATALOG = [
+    {
+      id: "rde.lofi.radio",
+      name: "Lo-Fi Coding Radio",
+      author: "RayVen Team",
+      version: "1.2.0",
+      description: "Chill lo-fi music stream directly in your IDE for deep coding focus.",
+      icon: "🎵",
+      isInstalled: true,
+      isEnabled: true,
+      init: function(api) {
+        api.addToolbarButton({
+          id: "btn-lofi-toggle",
+          title: "Lo-Fi Background Coding Radio",
+          iconHtml: ICONS ? ICONS.lofiRadio : "🎵",
+          onClick: () => api.toggleLofiRadio()
+        });
+      },
+      cleanup: function() {
+        const btn = document.getElementById("btn-lofi-toggle");
+        if (btn) btn.remove();
+        if (lofiAudio && isLofiPlaying) {
+          lofiAudio.pause();
+          isLofiPlaying = false;
+        }
+      }
+    },
+    {
+      id: "rde.code.formatter",
+      name: "Code Beautifier & Formatter",
+      author: "PythonDev",
+      version: "1.0.4",
+      description: "Cleans trailing spaces, fixes 4-space indentations, and tidies blank lines.",
+      icon: "✨",
+      isInstalled: true,
+      isEnabled: true,
+      init: function(api) {
+        api.addToolbarButton({
+          id: "btn-format-code",
+          title: "Format & Clean Code",
+          iconHtml: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h14"/></svg>`,
+          onClick: () => {
+            const raw = api.getEditorContent();
+            if (!raw) return;
+            // Trim trailing spaces and standardize newlines
+            const formatted = raw
+              .split("\n")
+              .map(line => line.trimEnd())
+              .join("\n");
+            api.setEditorContent(formatted);
+            api.showNotification("Code formatted: trailing spaces cleared!", "success");
+          }
+        });
+      },
+      cleanup: function() {
+        const btn = document.getElementById("btn-format-code");
+        if (btn) btn.remove();
+      }
+    },
+    {
+      id: "rde.snippets.pack",
+      name: "Python Quick Snippets",
+      author: "DevTools",
+      version: "1.1.0",
+      description: "Quick insert templates for classes, try-except, lambda, and async functions.",
+      icon: "⚡",
+      isInstalled: false,
+      isEnabled: false,
+      init: function(api) {
+        api.addToolbarButton({
+          id: "btn-snippet-pack",
+          title: "Insert Python Snippet",
+          iconHtml: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+          onClick: () => {
+            const snippet = prompt("Choose Snippet:\n1. class MyClass\n2. try/except\n3. if __name__ == '__main__':\nEnter 1, 2, or 3:");
+            if (snippet === "1") {
+              api.insertText("\nclass Model:\n    def __init__(self, name):\n        self.name = name\n");
+            } else if (snippet === "2") {
+              api.insertText("\ntry:\n    pass\nexcept Exception as e:\n    print(f'Error: {e}')\n");
+            } else if (snippet === "3") {
+              api.insertText("\nif __name__ == '__main__':\n    main()\n");
+            }
+          }
+        });
+      },
+      cleanup: function() {
+        const btn = document.getElementById("btn-snippet-pack");
+        if (btn) btn.remove();
+      }
+    },
+    {
+      id: "rde.line.sorter",
+      name: "Line Sorter & Uniq",
+      author: "Algorithms Lab",
+      version: "1.0.1",
+      description: "Sort selected lines alphabetically and remove duplicate entries.",
+      icon: "📶",
+      isInstalled: false,
+      isEnabled: false,
+      init: function(api) {
+        api.addToolbarButton({
+          id: "btn-line-sorter",
+          title: "Sort Lines Alphabetically",
+          iconHtml: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M9 18h6"/></svg>`,
+          onClick: () => {
+            const content = api.getEditorContent();
+            if (!content) return;
+            const lines = content.split("\n");
+            const sorted = Array.from(new Set(lines)).sort().join("\n");
+            api.setEditorContent(sorted);
+            api.showNotification("Lines sorted and duplicates removed!", "info");
+          }
+        });
+      },
+      cleanup: function() {
+        const btn = document.getElementById("btn-line-sorter");
+        if (btn) btn.remove();
+      }
+    }
+  ];
+
+  let catalog = loadCatalog();
+
+  function loadCatalog() {
+    try {
+      const stored = localStorage.getItem(MARKETPLACE_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return DEFAULT_CATALOG.map(def => {
+          const found = parsed.find(p => p.id === def.id);
+          return found ? { ...def, isInstalled: found.isInstalled, isEnabled: found.isEnabled } : def;
+        });
+      }
+    } catch (e) {
+      console.warn("Marketplace load error:", e);
+    }
+    return DEFAULT_CATALOG;
+  }
+
+  function saveCatalog() {
+    try {
+      const stateToSave = catalog.map(p => ({ id: p.id, isInstalled: p.isInstalled, isEnabled: p.isEnabled }));
+      localStorage.setItem(MARKETPLACE_STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch (e) {
+      console.warn("Marketplace save error:", e);
+    }
+  }
+
   window.rdeAPI = {
-    // 1. Plugin Registration
+    // 1. Plugin Registration & Execution
     registerPlugin: function(manifest) {
       if (!manifest || !manifest.id) return;
-      plugins.set(manifest.id, manifest);
+      activePlugins.set(manifest.id, manifest);
       if (typeof manifest.init === "function") {
         manifest.init(window.rdeAPI);
       }
-      console.log(`[rdeAPI] Plugin registered: ${manifest.name || manifest.id}`);
     },
 
     // 2. Toolbar & UI Extension
@@ -33,17 +183,15 @@
       return btn;
     },
 
-    // 3. Notification & Toast
     showNotification: function(msg, type = "info") {
       if (window.AndroidBridge && typeof window.AndroidBridge.showToast === "function") {
         window.AndroidBridge.showToast(msg);
       }
       if (window.appendOutputText) {
-        window.appendOutputText(`[RDE Plugin] ${msg}\n`, type);
+        window.appendOutputText(`[Extension] ${msg}\n`, type);
       }
     },
 
-    // 4. Editor Access
     getEditorContent: function() {
       return window.editor ? window.editor.getValue() : "";
     },
@@ -54,18 +202,25 @@
       }
     },
 
+    insertText: function(text) {
+      if (window.editor) {
+        window.editor.replaceSelection(text);
+        if (window.editor.focus) window.editor.focus();
+      }
+    },
+
     getActiveFile: function() {
       return window.currentFileName || "main.py";
     },
 
-    // 5. Lo-Fi Radio Player
+    // 3. Lo-Fi Radio Player
     toggleLofiRadio: function() {
       if (!lofiAudio) {
         lofiAudio = new Audio("https://live.hunter.fm/lofi_high");
         lofiAudio.volume = 0.6;
         lofiAudio.addEventListener("error", (e) => {
           console.warn("Lo-Fi stream error:", e);
-          window.rdeAPI.showNotification("Lo-Fi stream unavailable offline", "stderr");
+          window.rdeAPI.showNotification("Lo-Fi stream offline", "stderr");
           isLofiPlaying = false;
           updateLofiBtn();
         });
@@ -74,14 +229,13 @@
       if (isLofiPlaying) {
         lofiAudio.pause();
         isLofiPlaying = false;
-        window.rdeAPI.showNotification("🎵 Lo-Fi Radio Paused");
+        window.rdeAPI.showNotification("Lo-Fi Radio Paused");
       } else {
         lofiAudio.play().then(() => {
           isLofiPlaying = true;
-          window.rdeAPI.showNotification("🎵 Lo-Fi Coding Beats Playing...");
-        }).catch(err => {
-          console.warn("Lo-Fi play error:", err);
-          window.rdeAPI.showNotification("Tap again to play Lo-Fi Radio");
+          window.rdeAPI.showNotification("Lo-Fi Beats Playing...");
+        }).catch(() => {
+          window.rdeAPI.showNotification("Tap again to play Lo-Fi");
         });
       }
       updateLofiBtn();
@@ -89,6 +243,48 @@
 
     isLofiActive: function() {
       return isLofiPlaying;
+    },
+
+    // 4. Marketplace API
+    getCatalog: function() {
+      return catalog;
+    },
+
+    installExtension: function(id) {
+      const ext = catalog.find(p => p.id === id);
+      if (!ext) return;
+      ext.isInstalled = true;
+      ext.isEnabled = true;
+      saveCatalog();
+      if (typeof ext.init === "function") ext.init(window.rdeAPI);
+      window.rdeAPI.showNotification(`Installed "${ext.name}"!`, "success");
+      renderMarketplaceUI();
+    },
+
+    uninstallExtension: function(id) {
+      const ext = catalog.find(p => p.id === id);
+      if (!ext) return;
+      if (typeof ext.cleanup === "function") ext.cleanup();
+      ext.isInstalled = false;
+      ext.isEnabled = false;
+      saveCatalog();
+      window.rdeAPI.showNotification(`Uninstalled "${ext.name}".`, "info");
+      renderMarketplaceUI();
+    },
+
+    toggleExtension: function(id, enable) {
+      const ext = catalog.find(p => p.id === id);
+      if (!ext) return;
+      ext.isEnabled = enable;
+      saveCatalog();
+      if (enable) {
+        if (typeof ext.init === "function") ext.init(window.rdeAPI);
+        window.rdeAPI.showNotification(`Enabled "${ext.name}".`, "success");
+      } else {
+        if (typeof ext.cleanup === "function") ext.cleanup();
+        window.rdeAPI.showNotification(`Disabled "${ext.name}".`, "info");
+      }
+      renderMarketplaceUI();
     }
   };
 
@@ -104,20 +300,112 @@
     }
   }
 
-  // Pre-register Lo-Fi Music Plugin
+  // --- MARKETPLACE MODAL RENDERING ---
+  let activeTab = "all"; // 'all' or 'installed'
+
+  function renderMarketplaceUI() {
+    const container = document.getElementById("marketplace-list");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const searchQuery = (document.getElementById("marketplace-search")?.value || "").toLowerCase();
+
+    const filtered = catalog.filter(ext => {
+      const matchesTab = activeTab === "all" ? true : ext.isInstalled;
+      const matchesSearch = ext.name.toLowerCase().includes(searchQuery) || ext.description.toLowerCase().includes(searchQuery);
+      return matchesTab && matchesSearch;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted);">No extensions found</div>`;
+      return;
+    }
+
+    filtered.forEach(ext => {
+      const card = document.createElement("div");
+      card.className = "extension-card";
+
+      card.innerHTML = `
+        <div class="ext-header">
+          <div class="ext-title-group">
+            <span class="ext-icon">${ext.icon}</span>
+            <div>
+              <div class="ext-title">${ext.name} <span class="ext-version">v${ext.version}</span></div>
+              <div class="ext-author">by ${ext.author}</div>
+            </div>
+          </div>
+          <div class="ext-controls">
+            ${ext.isInstalled ? `
+              <button class="ext-btn ${ext.isEnabled ? 'btn-active' : ''}" data-action="toggle" data-id="${ext.id}">
+                ${ext.isEnabled ? 'Enabled' : 'Disabled'}
+              </button>
+              <button class="ext-btn btn-danger" data-action="uninstall" data-id="${ext.id}">Delete</button>
+            ` : `
+              <button class="ext-btn btn-install" data-action="install" data-id="${ext.id}">Install</button>
+            `}
+          </div>
+        </div>
+        <div class="ext-desc">${ext.description}</div>
+      `;
+
+      container.appendChild(card);
+    });
+
+    // Bind card buttons
+    container.querySelectorAll("button[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        if (action === "install") {
+          window.rdeAPI.installExtension(id);
+        } else if (action === "uninstall") {
+          window.rdeAPI.uninstallExtension(id);
+        } else if (action === "toggle") {
+          const ext = catalog.find(p => p.id === id);
+          if (ext) window.rdeAPI.toggleExtension(id, !ext.isEnabled);
+        }
+      });
+    });
+  }
+
+  // --- INITIALIZE ENABLED EXTENSIONS ---
   window.addEventListener("DOMContentLoaded", () => {
-    window.rdeAPI.registerPlugin({
-      id: "rde.lofi.radio",
-      name: "Lo-Fi Coding Beats",
-      version: "1.0.0",
-      init: function(api) {
-        const btn = api.addToolbarButton({
-          id: "btn-lofi-toggle",
-          title: "Lo-Fi Background Coding Radio",
-          iconHtml: "🎵",
-          onClick: () => api.toggleLofiRadio()
-        });
+    catalog.forEach(ext => {
+      if (ext.isInstalled && ext.isEnabled && typeof ext.init === "function") {
+        ext.init(window.rdeAPI);
       }
     });
+
+    // Marketplace triggers
+    const modal = document.getElementById("marketplace-modal");
+    document.getElementById("btn-open-marketplace")?.addEventListener("click", () => {
+      modal.style.display = "flex";
+      renderMarketplaceUI();
+    });
+
+    document.getElementById("act-marketplace")?.addEventListener("click", () => {
+      modal.style.display = "flex";
+      renderMarketplaceUI();
+    });
+
+    document.getElementById("btn-close-marketplace")?.addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+
+    document.getElementById("marketplace-tab-all")?.addEventListener("click", () => {
+      activeTab = "all";
+      document.getElementById("marketplace-tab-all").classList.add("active");
+      document.getElementById("marketplace-tab-installed").classList.remove("active");
+      renderMarketplaceUI();
+    });
+
+    document.getElementById("marketplace-tab-installed")?.addEventListener("click", () => {
+      activeTab = "installed";
+      document.getElementById("marketplace-tab-installed").classList.add("active");
+      document.getElementById("marketplace-tab-all").classList.remove("active");
+      renderMarketplaceUI();
+    });
+
+    document.getElementById("marketplace-search")?.addEventListener("input", renderMarketplaceUI);
   });
 })();
