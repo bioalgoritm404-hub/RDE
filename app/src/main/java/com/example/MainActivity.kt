@@ -96,6 +96,69 @@ class MainActivity : ComponentActivity() {
         pendingSaveContent = null
     }
 
+    val pickPluginLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            if (uri != null) {
+                val fileName = getFileNameFromUri(uri)
+                if (!fileName.lowercase().endsWith(".js")) {
+                    Toast.makeText(this, "Выберите файл с расширением .js", Toast.LENGTH_LONG).show()
+                    return@registerForActivityResult
+                }
+                try {
+                    contentResolver.openInputStream(uri)?.use { stream ->
+                        val text = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                        runOnUiThread {
+                            currentWebView?.evaluateJavascript(
+                                "if (window.onPluginFileImported) { window.onPluginFileImported(${org.json.JSONObject.quote(fileName)}, ${org.json.JSONObject.quote(text)}); }",
+                                null
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Ошибка чтения: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    fun launchPluginPicker() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                "*/*",
+                "text/plain",
+                "text/javascript",
+                "application/javascript",
+                "application/x-javascript",
+                "application/octet-stream"
+            ))
+        }
+        try {
+            pickPluginLauncher.launch(intent)
+        } catch (_: Exception) {
+            val fallbackIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+            pickPluginLauncher.launch(fallbackIntent)
+        }
+    }
+
+    private fun getFileNameFromUri(uri: Uri): String {
+        var name = "plugin.js"
+        try {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1 && cursor.moveToFirst()) {
+                    name = cursor.getString(nameIndex)
+                }
+            }
+        } catch (_: Exception) {}
+        return name
+    }
+
     fun launchSaveAsPicker(suggestedName: String, content: String) {
         pendingSaveContent = content
         val mime = getMimeTypeForFilename(suggestedName)
@@ -297,9 +360,18 @@ fun RdeAppScreen(activity: Activity) {
                                 mainAct.fileChooserCallback?.onReceiveValue(null)
                                 mainAct.fileChooserCallback = filePathCallback
                                 val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
-                                    type = "*/*"
                                     addCategory(Intent.CATEGORY_OPENABLE)
                                 }
+                                // Force type to */* and include wide MIME types so .js files are never grayed out by Android SAF
+                                intent.type = "*/*"
+                                intent.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
+                                    "*/*",
+                                    "text/plain",
+                                    "text/javascript",
+                                    "application/javascript",
+                                    "application/x-javascript",
+                                    "application/octet-stream"
+                                ))
                                 try {
                                     mainAct.fileChooserLauncher.launch(intent)
                                     return true
@@ -408,6 +480,13 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
     fun openDirectoryPicker() {
         activity.runOnUiThread {
             (activity as? MainActivity)?.openDirectoryLauncher?.launch(null)
+        }
+    }
+
+    @JavascriptInterface
+    fun pickPluginJsFile() {
+        activity.runOnUiThread {
+            (activity as? MainActivity)?.launchPluginPicker()
         }
     }
 

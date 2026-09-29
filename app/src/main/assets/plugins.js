@@ -156,14 +156,28 @@
     }
   }
 
+  let currentRegisteringPluginId = null;
+
   window.rdeAPI = {
     // 1. Plugin Registration & Execution
     registerPlugin: function(manifest) {
       if (!manifest || !manifest.id) return;
+
+      // Lifecycle Cleanup if plugin is re-registered
+      const existing = activePlugins.get(manifest.id);
+      if (existing) {
+        if (typeof existing.cleanup === "function") {
+          try { existing.cleanup(); } catch (e) { console.warn(e); }
+        }
+      }
+      // Remove any leftover buttons from previous registration of this plugin
+      document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${manifest.id}"]`).forEach(btn => btn.remove());
+
       activePlugins.set(manifest.id, manifest);
 
-      // Add to catalog if not present
-      if (!catalog.find(p => p.id === manifest.id)) {
+      // Add to catalog if not present, or update existing entry
+      const existingCatalogEntry = catalog.find(p => p.id === manifest.id);
+      if (!existingCatalogEntry) {
         catalog.push({
           id: manifest.id,
           name: manifest.name || "Custom Plugin",
@@ -177,23 +191,69 @@
           cleanup: manifest.cleanup
         });
         saveCatalog();
+      } else {
+        existingCatalogEntry.init = manifest.init;
+        existingCatalogEntry.cleanup = manifest.cleanup;
+        existingCatalogEntry.isEnabled = true;
+        saveCatalog();
       }
 
       if (typeof manifest.init === "function") {
-        manifest.init(window.rdeAPI);
+        currentRegisteringPluginId = manifest.id;
+        try {
+          manifest.init(window.rdeAPI);
+        } catch (e) {
+          console.warn("Plugin init error:", e);
+        } finally {
+          currentRegisteringPluginId = null;
+        }
       }
       renderMarketplaceUI();
     },
 
-    // 2. Toolbar & UI Extension
+    // Unregister plugin & cleanup created UI
+    unregisterPlugin: function(pluginId) {
+      if (!pluginId) return;
+      const existing = activePlugins.get(pluginId);
+      if (existing && typeof existing.cleanup === "function") {
+        try { existing.cleanup(); } catch (e) { console.warn(e); }
+      }
+      // Remove any toolbar buttons registered by this plugin
+      document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${pluginId}"]`).forEach(btn => btn.remove());
+      activePlugins.delete(pluginId);
+
+      const ext = catalog.find(p => p.id === pluginId);
+      if (ext) {
+        ext.isEnabled = false;
+        saveCatalog();
+      }
+      renderMarketplaceUI();
+    },
+
+    // 2. Toolbar & UI Extension with strict deduplication
     addToolbarButton: function(config) {
       const container = document.getElementById("custom-plugin-actions");
-      if (!container) return;
+      if (!container || !config) return null;
+
+      const btnId = config.id || `btn-plugin-${Date.now()}`;
+
+      // Deduplication: remove existing button with identical ID
+      const oldBtn = document.getElementById(btnId);
+      if (oldBtn) {
+        oldBtn.remove();
+      }
+
       const btn = document.createElement("button");
       btn.className = "icon-btn";
-      btn.id = config.id || `btn-plugin-${Date.now()}`;
+      btn.id = btnId;
       btn.title = config.title || "";
-      btn.innerHTML = config.iconHtml || "⚡";
+      btn.innerHTML = config.iconHtml || `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+
+      const ownerPluginId = config.pluginId || currentRegisteringPluginId || "";
+      if (ownerPluginId) {
+        btn.setAttribute("data-plugin-id", ownerPluginId);
+      }
+
       if (typeof config.onClick === "function") {
         btn.addEventListener("click", () => config.onClick(window.rdeAPI));
       }
@@ -280,13 +340,14 @@
     },
 
     uninstallExtension: function(id) {
+      window.rdeAPI.unregisterPlugin(id);
       const ext = catalog.find(p => p.id === id);
-      if (!ext) return;
-      if (typeof ext.cleanup === "function") ext.cleanup();
-      ext.isInstalled = false;
-      ext.isEnabled = false;
-      saveCatalog();
-      window.rdeAPI.showNotification(`Uninstalled "${ext.name}".`, "info");
+      if (ext) {
+        ext.isInstalled = false;
+        ext.isEnabled = false;
+        saveCatalog();
+        window.rdeAPI.showNotification(`Uninstalled "${ext.name}".`, "info");
+      }
       renderMarketplaceUI();
     },
 
@@ -296,10 +357,22 @@
       ext.isEnabled = enable;
       saveCatalog();
       if (enable) {
-        if (typeof ext.init === "function") ext.init(window.rdeAPI);
+        // Clean any leftover buttons before re-initializing
+        document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${id}"]`).forEach(btn => btn.remove());
+        if (typeof ext.init === "function") {
+          currentRegisteringPluginId = id;
+          try {
+            ext.init(window.rdeAPI);
+          } finally {
+            currentRegisteringPluginId = null;
+          }
+        }
         window.rdeAPI.showNotification(`Enabled "${ext.name}".`, "success");
       } else {
-        if (typeof ext.cleanup === "function") ext.cleanup();
+        if (typeof ext.cleanup === "function") {
+          try { ext.cleanup(); } catch (_) {}
+        }
+        document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${id}"]`).forEach(btn => btn.remove());
         window.rdeAPI.showNotification(`Disabled "${ext.name}".`, "info");
       }
       renderMarketplaceUI();
@@ -476,24 +549,48 @@
 
     document.getElementById("marketplace-search")?.addEventListener("input", renderMarketplaceUI);
 
+    // Global callback from Android SAF pickPluginLauncher
+    window.onPluginFileImported = function(fileName, code) {
+      if (!fileName || !fileName.toLowerCase().endsWith(".js")) {
+        window.rdeAPI.showNotification("Выберите файл с расширением .js", "stderr");
+        return;
+      }
+      try {
+        new Function(code)();
+        saveCustomPluginScript(code);
+        window.rdeAPI.showNotification(`Импортирован плагин "${fileName}"!`, "success");
+      } catch (err) {
+        window.rdeAPI.showNotification(`Ошибка выполнения плагина: ${err.message}`, "stderr");
+      }
+    };
+
     // Custom Plugin File Picker
     const pluginPicker = document.getElementById("plugin-file-picker");
     document.getElementById("btn-import-plugin-file")?.addEventListener("click", () => {
-      pluginPicker?.click();
+      if (window.AndroidBridge && typeof window.AndroidBridge.pickPluginJsFile === "function") {
+        window.AndroidBridge.pickPluginJsFile();
+      } else {
+        pluginPicker?.click();
+      }
     });
 
     pluginPicker?.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+      if (!file.name.toLowerCase().endsWith(".js")) {
+        window.rdeAPI.showNotification("Выберите файл с расширением .js", "stderr");
+        pluginPicker.value = "";
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         const code = event.target.result;
         try {
           new Function(code)();
           saveCustomPluginScript(code);
-          window.rdeAPI.showNotification(`Imported & registered "${file.name}"!`, "success");
+          window.rdeAPI.showNotification(`Импортирован плагин "${file.name}"!`, "success");
         } catch (err) {
-          window.rdeAPI.showNotification(`Plugin script error: ${err.message}`, "stderr");
+          window.rdeAPI.showNotification(`Ошибка выполнения плагина: ${err.message}`, "stderr");
         }
       };
       reader.readAsText(file);
