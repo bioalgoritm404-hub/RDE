@@ -3,16 +3,21 @@ package com.example
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.MediaStore
 import android.webkit.JavascriptInterface
 import android.webkit.JsPromptResult
 import android.webkit.JsResult
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -23,12 +28,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,8 +45,22 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.VsCodeDarkBg
+import java.io.File
 
 class MainActivity : ComponentActivity() {
+
+    var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+
+    val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val uris = WebChromeClient.FileChooserParams.parseResult(result.resultCode, data)
+            fileChooserCallback?.onReceiveValue(uris)
+        } else {
+            fileChooserCallback?.onReceiveValue(null)
+        }
+        fileChooserCallback = null
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,7 +85,7 @@ class MainActivity : ComponentActivity() {
 fun RdeAppScreen(activity: Activity) {
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-    // Intercept back button to dismiss open drawers or dialogs first
+    // Intercept back button to dismiss open drawers, modals or keyboards first
     BackHandler {
         webViewRef?.evaluateJavascript("window.handleAndroidBack ? window.handleAndroidBack() : false") { result ->
             val handled = result == "true"
@@ -115,18 +132,42 @@ fun RdeAppScreen(activity: Activity) {
                         cacheMode = WebSettings.LOAD_DEFAULT
                         displayZoomControls = false
                         builtInZoomControls = false
+                        mediaPlaybackRequiresUserGesture = false
                     }
 
                     // Native Android Bridge for JS interactions
                     addJavascriptInterface(AndroidBridge(activity, this), "AndroidBridge")
 
-                    // WebChromeClient to handle alert, confirm, and prompt dialogs
+                    // WebChromeClient to handle alert, confirm, prompt, and system file chooser
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
                             consoleMessage?.let {
                                 android.util.Log.d("RDE_JS", "[${it.messageLevel()}] ${it.message()} -- line ${it.lineNumber()} of ${it.sourceId()}")
                             }
                             return true
+                        }
+
+                        override fun onShowFileChooser(
+                            view: WebView?,
+                            filePathCallback: ValueCallback<Array<Uri>>?,
+                            fileChooserParams: FileChooserParams?
+                        ): Boolean {
+                            (activity as? MainActivity)?.let { mainAct ->
+                                mainAct.fileChooserCallback?.onReceiveValue(null)
+                                mainAct.fileChooserCallback = filePathCallback
+                                val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                                    type = "*/*"
+                                    addCategory(Intent.CATEGORY_OPENABLE)
+                                }
+                                try {
+                                    mainAct.fileChooserLauncher.launch(intent)
+                                    return true
+                                } catch (e: Exception) {
+                                    mainAct.fileChooserCallback = null
+                                    return false
+                                }
+                            }
+                            return false
                         }
 
                         override fun onJsAlert(
@@ -197,7 +238,6 @@ fun RdeAppScreen(activity: Activity) {
                 }
             },
             update = {
-                // Keep webview reference fresh
                 webViewRef = it
             }
         )
@@ -220,6 +260,38 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
     fun onCodeRunFinished() {
         activity.runOnUiThread {
             vibrateDevice(activity, 20)
+        }
+    }
+
+    @JavascriptInterface
+    fun saveFileToDownloads(fileName: String, content: String) {
+        activity.runOnUiThread {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    val values = ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                        put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    }
+                    val uri = activity.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    if (uri != null) {
+                        activity.contentResolver.openOutputStream(uri)?.use { stream ->
+                            stream.write(content.toByteArray(Charsets.UTF_8))
+                        }
+                        Toast.makeText(activity, "Saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(activity, "Failed to create file in Downloads", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    dir.mkdirs()
+                    val file = File(dir, fileName)
+                    file.writeText(content, Charsets.UTF_8)
+                    Toast.makeText(activity, "Saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(activity, "Save error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
