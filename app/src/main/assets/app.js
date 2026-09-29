@@ -1,8 +1,4 @@
-/**
- * RDE Core Application Engine
- */
 
-// --- 1. LOCALIZATION DICTIONARY ---
 const I18N = {
   en: {
     explorer: "EXPLORER",
@@ -58,7 +54,6 @@ const I18N = {
   }
 };
 
-// --- 2. SETTINGS STATE ---
 const SETTINGS_KEY = "rde_user_settings_v3";
 let appSettings = loadAppSettings();
 
@@ -114,7 +109,6 @@ function applyAppSettings() {
   if (window.editor && window.editor.refresh) setTimeout(() => window.editor.refresh(), 30);
 }
 
-// --- 3. STARTER FILES & STORAGE ---
 const DEFAULT_PYTHON = `"""
 ═══════════════════════════════════════════════════════
    RayVen Development Environment (RDE)
@@ -222,13 +216,12 @@ let editor = null;
 let pyodideInstance = null;
 let isPyodideLoading = true;
 let isExecuting = false;
-let shiftState = 0; // 0 = off, 1 = single shift (1 char), 2 = caps lock
+let shiftState = 0;
 let isShiftActive = false;
 let lastShiftTapTime = 0;
 let isCtrlActive = false;
 let isKeyboardOpen = false;
 
-// Search State
 let searchCursor = null;
 let currentSearchMatches = [];
 let currentSearchIndex = -1;
@@ -260,12 +253,10 @@ function saveStoredFiles(f) {
   }
 }
 
-// --- 4. REAL DEVICE FILE & FOLDER INTEGRATION (OPEN / SAVE TO DOWNLOADS) ---
 function setupDeviceFileIntegration() {
   const fileInput = document.getElementById("device-file-input");
   const folderInput = document.getElementById("device-folder-input");
 
-  // Open single file from phone memory
   fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -286,7 +277,6 @@ function setupDeviceFileIntegration() {
     fileInput.value = "";
   });
 
-  // Open whole folder/workspace from device
   if (folderInput) {
     folderInput.addEventListener("change", (e) => {
       const selectedFiles = Array.from(e.target.files);
@@ -319,12 +309,10 @@ function setupDeviceFileIntegration() {
     });
   }
 
-  // Open file button trigger
   document.getElementById("btn-open-device-file")?.addEventListener("click", () => {
     fileInput.click();
   });
 
-  // Open folder button trigger (SAF Android Directory Picker)
   document.getElementById("btn-open-device-folder")?.addEventListener("click", () => {
     if (window.AndroidBridge && typeof window.AndroidBridge.openDirectoryPicker === "function") {
       window.AndroidBridge.openDirectoryPicker();
@@ -333,13 +321,11 @@ function setupDeviceFileIntegration() {
     }
   });
 
-  // Save current file button
   document.getElementById("btn-save-device-file")?.addEventListener("click", () => {
     saveCurrentFileToDevice(currentFileName);
   });
 }
 
-// Native SAF Folder Loaded Callback from Android Kotlin
 window.onNativeFolderLoaded = function(rootName, filesMap) {
   if (!filesMap || typeof filesMap !== "object") return;
   const keys = Object.keys(filesMap);
@@ -368,7 +354,6 @@ function saveCurrentFileToDevice(targetName) {
   } else if (window.AndroidBridge && typeof window.AndroidBridge.saveFileToDownloads === "function") {
     window.AndroidBridge.saveFileToDownloads(targetName, content);
   } else {
-    // Browser fallback download
     try {
       const mime = targetName.endsWith(".py") ? "text/x-python" : (targetName.endsWith(".html") ? "text/html" : "text/plain");
       const blob = new Blob([content], { type: `${mime};charset=utf-8` });
@@ -404,7 +389,6 @@ function saveCurrentFileAs() {
   }
 }
 
-// --- 5. RUN / HTML PREVIEW DISPATCHER ---
 function updateRunButtonLabel() {
   const runBtn = document.getElementById("btn-run-code");
   const runLabel = document.getElementById("run-label");
@@ -442,7 +426,6 @@ function openHtmlLivePreview() {
   modal.style.display = "flex";
 }
 
-// --- 6. SEARCH & REPLACE ENGINE ---
 function setupSearchReplace() {
   const bar = document.getElementById("search-replace-bar");
   const queryInput = document.getElementById("sr-query");
@@ -576,7 +559,6 @@ function findPrev() {
   highlightCurrentMatch();
 }
 
-// --- 7. KEYBOARD CONTROLLER ---
 function updateKeyboardToggleBtn() {
   const kbBtn = document.getElementById("btn-toggle-keyboard");
   const kbText = document.getElementById("kb-btn-text");
@@ -624,8 +606,7 @@ function setKeyboardOpen(open) {
   }
 }
 
-// --- 8. VIRTUAL KEYBOARD ACTIONS & MULTILINGUAL LAYOUTS ---
-let currentKeyboardLayout = "en"; // 'en' or 'ru'
+let currentKeyboardLayout = "en";
 
 const KB_LAYOUTS = {
   en: {
@@ -708,7 +689,6 @@ function setShiftState(state) {
     }
   }
 
-  // Update letter keys for both EN and RU
   const isUpper = shiftState > 0;
   document.querySelectorAll(".vk-btn[data-key]").forEach(b => {
     const k = b.getAttribute("data-key");
@@ -726,17 +706,14 @@ function handleShiftTap() {
   lastShiftTapTime = now;
 
   if (shiftState === 2) {
-    // Caps lock was on -> turn off
     setShiftState(0);
   } else if (shiftState === 1) {
-    // Was in single shift -> double tap within 300ms toggles CAPS LOCK
     if (timeSinceLast < 300) {
       setShiftState(2);
     } else {
       setShiftState(0);
     }
   } else {
-    // Was off (0) -> double tap within 300ms toggles CAPS LOCK, otherwise single shift
     if (timeSinceLast < 300) {
       setShiftState(2);
     } else {
@@ -757,7 +734,6 @@ function renderKeyboardRows() {
       if (def.id) btn.id = def.id;
       if (def.style) btn.style.cssText = def.style;
 
-      // Prevent losing editor focus on pointer/mouse touch
       btn.addEventListener("pointerdown", (e) => e.preventDefault());
       btn.addEventListener("mousedown", (e) => e.preventDefault());
 
@@ -814,7 +790,6 @@ function setupVirtualKeyboard() {
     vkContainer.addEventListener("mousedown", (e) => e.preventDefault());
   }
 
-  // Bind Row 1 (Numbers, symbols, pairs, backspace)
   document.querySelectorAll(".kb-row:first-child .vk-btn").forEach(btn => {
     btn.addEventListener("pointerdown", (e) => e.preventDefault());
     btn.addEventListener("mousedown", (e) => e.preventDefault());
@@ -831,7 +806,6 @@ function setupVirtualKeyboard() {
     }
   });
 
-  // Render Rows 2, 3, 4 dynamically according to layout
   renderKeyboardRows();
 }
 
@@ -944,14 +918,12 @@ function insertPair(pair) {
 function handleBackspace(cm) {
   if (!cm) return;
 
-  // 1. If text is selected, delete selection
   if (cm.somethingSelected && cm.somethingSelected()) {
     cm.replaceSelection("");
     if (cm.focus) cm.focus();
     return;
   }
 
-  // 2. Fallback textarea check
   if (typeof CodeMirror === "undefined" || !(cm instanceof CodeMirror)) {
     const el = document.getElementById("code-editor-fallback");
     if (!el) return;
@@ -975,11 +947,9 @@ function handleBackspace(cm) {
     return;
   }
 
-  // 3. CodeMirror instance
   const cur = cm.getCursor();
   const lineText = cm.getLine(cur.line);
 
-  // If at start of line and not first line, join with previous line
   if (cur.ch === 0) {
     if (cur.line > 0) {
       const prevLine = cm.getLine(cur.line - 1);
@@ -991,11 +961,8 @@ function handleBackspace(cm) {
     return;
   }
 
-  // Check text before cursor on current line
   const textBefore = lineText.substring(0, cur.ch);
 
-  // Smart Backspace / Dedent:
-  // If text before cursor consists only of spaces (indentation), remove spaces quantized to indentUnit (4)
   if (/^[ ]+$/.test(textBefore)) {
     const col = cur.ch;
     const spacesToDelete = (col % 4 === 0) ? 4 : (col % 4);
@@ -1003,14 +970,12 @@ function handleBackspace(cm) {
     cm.replaceRange("", { line: cur.line, ch: fromCh }, { line: cur.line, ch: col });
     cm.setCursor({ line: cur.line, ch: fromCh });
   } else {
-    // Normal single character deletion
     CodeMirror.commands.delCharBefore(cm);
   }
 
   if (cm.focus) cm.focus();
 }
 
-// --- 9. EDITOR INITIALIZATION ---
 function initEditor() {
   const fallback = document.getElementById("code-editor-fallback");
   const initialCode = files[currentFileName] || DEFAULT_PYTHON;
@@ -1172,7 +1137,6 @@ function upgradeToCodeMirror() {
   }
 }
 
-// --- 10. CONSOLE OUTPUT & PYODIDE ---
 const outputView = document.getElementById("output-view");
 
 function appendOutputText(text, type = "stdout") {
@@ -1268,7 +1232,6 @@ async function runCode() {
   }
 }
 
-// --- 10.5 PIP PACKAGE MANAGER (MICROPIP) ---
 let installedPipPackages = JSON.parse(localStorage.getItem("rde_installed_pip_v2") || '["micropip"]');
 
 function addInstalledPackage(pkg) {
@@ -1343,7 +1306,6 @@ await micropip.install('${pkgName}')
   }
 }
 
-// --- 11. TREE VIEW EXPLORER & RECENT FILES ---
 let collapsedFolders = new Set(JSON.parse(localStorage.getItem("rde_collapsed_folders_v1") || "[]"));
 let recentFiles = JSON.parse(localStorage.getItem("rde_recent_files_v1") || "[]");
 
@@ -1471,7 +1433,6 @@ function renderTreeBranch(node, container) {
       const actions = document.createElement("div");
       actions.className = "file-item-actions";
 
-      // Add new file in folder
       const btnAddInFolder = document.createElement("button");
       btnAddInFolder.className = "file-action-btn";
       btnAddInFolder.title = t.newFile;
@@ -1499,7 +1460,6 @@ function renderTreeBranch(node, container) {
 
       container.appendChild(folderEl);
     } else {
-      // File Leaf
       const fileEl = document.createElement("div");
       fileEl.className = `file-tree-item ${item.path === currentFileName ? "active" : ""}`;
 
@@ -1602,7 +1562,6 @@ function loadScriptAsync(src, onLoad) {
   document.body.appendChild(s);
 }
 
-// --- 12. VIEWPORT ADAPTATION ---
 function adaptLayoutToViewport() {
   const vv = window.visualViewport;
   const appRoot = document.getElementById("app-root");
@@ -1621,7 +1580,6 @@ function adaptLayoutToViewport() {
   }
 }
 
-// --- 13. DOM SETUP ---
 window.addEventListener("DOMContentLoaded", () => {
   initEditor();
   setupVirtualKeyboard();
@@ -1669,7 +1627,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (editor.focus) editor.focus();
   });
 
-  // Settings Modal
   const settingsModal = document.getElementById("settings-modal");
   document.getElementById("btn-open-settings").addEventListener("click", () => settingsModal.style.display = "flex");
   document.getElementById("btn-close-settings").addEventListener("click", () => settingsModal.style.display = "none");
@@ -1682,14 +1639,12 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("opt-lang-ru").addEventListener("click", () => { appSettings.language = "ru"; saveAppSettings(); });
   document.getElementById("opt-lang-en").addEventListener("click", () => { appSettings.language = "en"; saveAppSettings(); });
 
-  // Web Preview Modal
   const previewModal = document.getElementById("preview-modal");
   document.getElementById("btn-close-preview").addEventListener("click", () => previewModal.style.display = "none");
   document.getElementById("btn-refresh-preview").addEventListener("click", () => {
     document.getElementById("preview-iframe").srcdoc = editor ? editor.getValue() : "";
   });
 
-  // Console Panel
   const bottomPanel = document.getElementById("bottom-panel");
   document.getElementById("btn-toggle-terminal").addEventListener("click", () => {
     bottomPanel.classList.toggle("collapsed");
@@ -1703,7 +1658,6 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("ptab-output").addEventListener("click", () => showPanelTab("output"));
   document.getElementById("ptab-terminal").addEventListener("click", () => showPanelTab("terminal"));
 
-  // Sidebar
   const sidebar = document.getElementById("sidebar-container");
   document.getElementById("btn-toggle-sidebar").addEventListener("click", () => {
     sidebar.classList.toggle("collapsed");
@@ -1744,7 +1698,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Welcome Page Event Listeners
   document.getElementById("btn-show-welcome-logo")?.addEventListener("click", () => {
     showWelcomeView();
   });
@@ -1792,12 +1745,10 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Show Welcome on startup if enabled
   if (appSettings.showWelcomeOnStartup) {
     showWelcomeView();
   }
 
-  // Quick accessory bar keys
   const accBar = document.getElementById("mobile-accessory-bar");
   if (accBar) {
     accBar.addEventListener("pointerdown", (e) => e.preventDefault());
@@ -1834,7 +1785,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // REPL Send & Pip Interceptor
   const replInput = document.getElementById("repl-input");
   const replHistory = document.getElementById("repl-history");
 
@@ -1866,7 +1816,6 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!cmd) return;
     replInput.value = "";
 
-    // Intercept pip install command
     if (cmd.toLowerCase().startsWith("pip install ")) {
       runPipInstall(cmd);
       return;
@@ -1888,7 +1837,6 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-repl-send").addEventListener("click", sendRepl);
   replInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); sendRepl(); } });
 
-  // Packages Modal Listeners
   const packagesModal = document.getElementById("packages-modal");
   document.getElementById("btn-open-packages")?.addEventListener("click", () => {
     packagesModal.style.display = "flex";
@@ -1920,7 +1868,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Resizer
   const resizer = document.getElementById("panel-resizer");
   let isResizing = false, startY = 0, startHeight = 110;
   const onPointerMove = (e) => {
@@ -1950,7 +1897,6 @@ window.addEventListener("DOMContentLoaded", () => {
   resizer.addEventListener("mousedown", onPointerDown);
   resizer.addEventListener("touchstart", onPointerDown, { passive: true });
 
-  // Scripts
   loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js", () => {
     loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js", () => {
       loadScriptAsync("https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js", () => {

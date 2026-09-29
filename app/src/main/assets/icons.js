@@ -1,9 +1,4 @@
-/**
- * RDE Vector SVG Icons System (Devicon & VS Code style)
- * Crisp, lightweight, local vectors with zero network dependencies.
- */
 const ICONS = {
-  // --- File Type Logomarks ---
   python: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M11.9 2c-3.1 0-5.1 1.4-5.1 3.2v2.4h5.2v.8H4.7c-2 0-3.7 1.6-3.7 4 0 2.2 1.4 3.7 3.5 3.9h1.7v-2.3c0-2.3 2-4.1 4.3-4.1h5.1V7.5c0-1.8-2.2-5.5-3.7-5.5zm-1.8 1.6a.9.9 0 110 1.8.9.9 0 010-1.8z" fill="#3776ab"/><path d="M12.1 22c3.1 0 5.1-1.4 5.1-3.2v-2.4H12v-.8h7.3c2 0 3.7-1.6 3.7-4 0-2.2-1.4-3.7-3.5-3.9h-1.7v2.3c0 2.3-2 4.1-4.3 4.1H8.4v2.4c0 1.8 2.2 5.5 3.7 5.5zm1.8-1.6a.9.9 0 110-1.8.9.9 0 010 1.8z" fill="#ffd343"/></svg>`,
 
   html: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 2l1.6 18.2L12 22.5l7.4-2.3L21 2H3z" fill="#e34f26"/><path d="M12 3.8v16.9l5.8-1.8 1.4-15.1H12z" fill="#ef652a"/><path d="M7 6.8h10l-.2 2.6H9.7l.2 2.6h6.8l-.6 6.3L12 19.4l-4.1-1.1-.3-3.2h2.5l.2 1.5 1.7.5 1.7-.5.2-2.1H7.4L7 6.8z" fill="#ffffff"/></svg>`,
@@ -20,7 +15,6 @@ const ICONS = {
 
   text: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9da5b4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>`,
 
-  // --- Toolbar & Action Icons ---
   folder: `<svg width="14" height="14" viewBox="0 0 24 24" fill="#dcb67a"><path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z"/></svg>`,
 
   folderOpen: `<svg width="14" height="14" viewBox="0 0 24 24" fill="#dcb67a"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
@@ -56,9 +50,6 @@ const ICONS = {
   close: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
 };
 
-/**
- * Returns crisp SVG logomark for any filename.
- */
 function getFileIconSvg(fileName) {
   if (!fileName) return ICONS.text;
   const lower = fileName.toLowerCase();

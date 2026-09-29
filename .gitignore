@@ -2,16 +2,28 @@
 .gradle
 .kotlin
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
+local.properties
+.env
+.dev.env.json
+
+# IDE
+.idea/
+*.ipr
+*.iws
+
+# Build artifacts
 /build
+app/build/
+*.apk
+*.aab
 /captures
 .externalNativeBuild
 .cxx
-local.properties
-.env
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Keystores (keep debug.keystore if needed, ignore release keys)
+*.jks
+my-upload-key.jks

@@ -252,7 +252,6 @@ class MainActivity : ComponentActivity() {
             if (child.isDirectory) {
                 readDocumentDirectory(child, relPath, result, depth + 1)
             } else if (child.isFile) {
-                // Read text files up to 512KB
                 if (child.length() < 512 * 1024) {
                     try {
                         contentResolver.openInputStream(child.uri)?.use { stream ->
@@ -269,7 +268,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // True Immersive Fullscreen: hide status bar and navigation bar
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val insetsController = WindowCompat.getInsetsController(window, window.decorView)
         insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -288,7 +286,6 @@ class MainActivity : ComponentActivity() {
 fun RdeAppScreen(activity: Activity) {
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-    // Intercept back button to dismiss open drawers, modals or keyboards first
     BackHandler {
         webViewRef?.evaluateJavascript("window.handleAndroidBack ? window.handleAndroidBack() : false") { result ->
             val handled = result == "true"
@@ -339,10 +336,8 @@ fun RdeAppScreen(activity: Activity) {
                         mediaPlaybackRequiresUserGesture = false
                     }
 
-                    // Native Android Bridge for JS interactions
                     addJavascriptInterface(AndroidBridge(activity, this), "AndroidBridge")
 
-                    // WebChromeClient to handle alert, confirm, prompt, and system file chooser
                     webChromeClient = object : WebChromeClient() {
                         override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
                             consoleMessage?.let {
@@ -362,7 +357,6 @@ fun RdeAppScreen(activity: Activity) {
                                 val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
                                     addCategory(Intent.CATEGORY_OPENABLE)
                                 }
-                                // Force type to */* and include wide MIME types so .js files are never grayed out by Android SAF
                                 intent.type = "*/*"
                                 intent.putExtra(Intent.EXTRA_MIME_TYPES, arrayOf(
                                     "*/*",
@@ -457,9 +451,6 @@ fun RdeAppScreen(activity: Activity) {
     }
 }
 
-/**
- * Android Bridge interface exposed to JavaScript as `window.AndroidBridge`
- */
 class AndroidBridge(private val activity: Activity, private val webView: WebView) {
 
     @JavascriptInterface
@@ -501,7 +492,6 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
                     return@runOnUiThread
                 }
             }
-            // Fallback to SAF Save As picker if workspace is not set
             (activity as? MainActivity)?.launchSaveAsPicker(fileName, content)
         }
     }
@@ -585,8 +575,6 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
                     vibrator?.vibrate(durationMs)
                 }
             }
-        } catch (_: Exception) {
-            // Ignore vibration permission exceptions
-        }
+        } catch (_: Exception) {}
     }
 }

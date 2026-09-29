@@ -1,12 +1,8 @@
-/**
- * RDE Plugin System & Marketplace (window.rdeAPI)
- */
 (function() {
   const activePlugins = new Map();
   let lofiAudio = null;
   let isLofiPlaying = false;
 
-  // --- MARKETPLACE CATALOG ---
   const MARKETPLACE_STORAGE_KEY = "rde_marketplace_plugins_v1";
 
   const DEFAULT_CATALOG = [
@@ -219,34 +215,28 @@
   let isExplicitImportInProgress = false;
 
   window.rdeAPI = {
-    // 1. Plugin Registration & Execution
     registerPlugin: function(manifest) {
       if (!manifest || !manifest.id) return;
       lastRegisteredPluginId = manifest.id;
 
-      // If user uninstalled this plugin and this is an automatic startup load, skip it completely!
       if (isPluginUninstalled(manifest.id) && !isExplicitImportInProgress) {
         return;
       }
 
-      // If user explicitly imported this plugin, restore it from uninstalled list
       if (isExplicitImportInProgress) {
         unmarkPluginUninstalled(manifest.id);
       }
 
-      // Lifecycle Cleanup if plugin is re-registered
       const existing = activePlugins.get(manifest.id);
       if (existing) {
         if (typeof existing.cleanup === "function") {
           try { existing.cleanup(); } catch (e) { console.warn(e); }
         }
       }
-      // Remove any leftover buttons from previous registration of this plugin
       document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${manifest.id}"]`).forEach(btn => btn.remove());
 
       activePlugins.set(manifest.id, manifest);
 
-      // Add to catalog if not present, or update existing entry
       const existingCatalogEntry = catalog.find(p => p.id === manifest.id);
       if (!existingCatalogEntry) {
         catalog.push({
@@ -283,14 +273,12 @@
       renderMarketplaceUI();
     },
 
-    // Unregister plugin & cleanup created UI
     unregisterPlugin: function(pluginId) {
       if (!pluginId) return;
       const existing = activePlugins.get(pluginId);
       if (existing && typeof existing.cleanup === "function") {
         try { existing.cleanup(); } catch (e) { console.warn(e); }
       }
-      // Remove any toolbar buttons registered by this plugin
       document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${pluginId}"]`).forEach(btn => btn.remove());
       activePlugins.delete(pluginId);
 
@@ -302,14 +290,12 @@
       renderMarketplaceUI();
     },
 
-    // 2. Toolbar & UI Extension with strict deduplication
     addToolbarButton: function(config) {
       const container = document.getElementById("custom-plugin-actions");
       if (!container || !config) return null;
 
       const btnId = config.id || `btn-plugin-${Date.now()}`;
 
-      // Deduplication: remove existing button with identical ID
       const oldBtn = document.getElementById(btnId);
       if (oldBtn) {
         oldBtn.remove();
@@ -363,7 +349,6 @@
       return window.currentFileName || "main.py";
     },
 
-    // 3. Lo-Fi Radio Player
     toggleLofiRadio: function() {
       if (!lofiAudio) {
         lofiAudio = new Audio("https://live.hunter.fm/lofi_high");
@@ -395,7 +380,6 @@
       return isLofiPlaying;
     },
 
-    // 4. Marketplace API
     getCatalog: function() {
       return catalog;
     },
@@ -427,7 +411,6 @@
           ext.isEnabled = false;
         }
       } else {
-        // Custom plugin: remove completely from catalog
         catalog = catalog.filter(p => p.id !== id);
       }
       saveCatalog();
@@ -441,7 +424,6 @@
       ext.isEnabled = enable;
       saveCatalog();
       if (enable) {
-        // Clean any leftover buttons before re-initializing
         document.querySelectorAll(`#custom-plugin-actions [data-plugin-id="${id}"]`).forEach(btn => btn.remove());
         if (typeof ext.init === "function") {
           currentRegisteringPluginId = id;
@@ -475,8 +457,7 @@
     }
   }
 
-  // --- MARKETPLACE MODAL RENDERING ---
-  let activeTab = "all"; // 'all', 'installed', or 'import'
+  let activeTab = "all";
 
   function importCustomScript(scriptCode, fileName = "plugin.js") {
     if (!scriptCode || !scriptCode.trim()) return;
@@ -560,7 +541,6 @@
       container.appendChild(card);
     });
 
-    // Bind card buttons
     container.querySelectorAll("button[data-action]").forEach(btn => {
       btn.addEventListener("click", () => {
         const action = btn.getAttribute("data-action");
@@ -577,12 +557,9 @@
     });
   }
 
-  // --- INITIALIZE ENABLED EXTENSIONS ---
   window.addEventListener("DOMContentLoaded", () => {
-    // 1. Purge obsolete unkeyed scripts storage
     localStorage.removeItem("rde_user_custom_plugins_scripts_v1");
 
-    // 2. Run enabled built-in plugins (strictly skipping any uninstalled plugins)
     catalog.forEach(ext => {
       if (ext.isInstalled && ext.isEnabled && !isPluginUninstalled(ext.id) && typeof ext.init === "function") {
         currentRegisteringPluginId = ext.id;
@@ -596,7 +573,6 @@
       }
     });
 
-    // 3. Run stored custom plugin scripts (strictly checking they were NOT uninstalled)
     try {
       const customPlugins = JSON.parse(localStorage.getItem(CUSTOM_PLUGINS_META_KEY) || "[]");
       customPlugins.forEach(item => {
@@ -609,7 +585,6 @@
       });
     } catch (_) {}
 
-    // Marketplace triggers
     const modal = document.getElementById("marketplace-modal");
     document.getElementById("btn-open-marketplace")?.addEventListener("click", () => {
       modal.style.display = "flex";
@@ -655,7 +630,6 @@
 
     document.getElementById("marketplace-search")?.addEventListener("input", renderMarketplaceUI);
 
-    // Global callback from Android SAF pickPluginLauncher
     window.onPluginFileImported = function(fileName, code) {
       if (!fileName || !fileName.toLowerCase().endsWith(".js")) {
         window.rdeAPI.showNotification("Выберите файл с расширением .js", "stderr");
@@ -664,7 +638,6 @@
       importCustomScript(code, fileName);
     };
 
-    // Custom Plugin File Picker
     const pluginPicker = document.getElementById("plugin-file-picker");
     document.getElementById("btn-import-plugin-file")?.addEventListener("click", () => {
       if (window.AndroidBridge && typeof window.AndroidBridge.pickPluginJsFile === "function") {
@@ -690,7 +663,6 @@
       pluginPicker.value = "";
     });
 
-    // Custom Plugin Code Evaluation
     document.getElementById("btn-eval-custom-plugin")?.addEventListener("click", () => {
       const textarea = document.getElementById("custom-plugin-code");
       if (!textarea || !textarea.value.trim()) return;
@@ -699,7 +671,6 @@
       textarea.value = "";
     });
 
-    // Load sample my_plugin.js
     document.getElementById("btn-load-sample-plugin")?.addEventListener("click", () => {
       fetch("my_plugin.js")
         .then(res => res.text())

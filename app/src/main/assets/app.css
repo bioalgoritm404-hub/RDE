@@ -50,7 +50,6 @@ body.theme-cyberfox {
   --kb-key-text: #ffffff;
 }
 
-/* Syntax Highlighting */
 .cm-s-default .cm-keyword { color: #c586c0; font-weight: bold; }
 .cm-s-default .cm-def { color: #dcdcaa; }
 .cm-s-default .cm-variable { color: #9cdcfe; }
@@ -138,7 +137,6 @@ header {
 }
 .activity-icon.active { color: var(--text-bright); background: rgba(255, 255, 255, 0.1); border-left: 2px solid var(--accent-blue); }
 
-/* Minimalist Explorer */
 #sidebar-container {
   width: 190px; min-width: 190px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color);
   display: flex; flex-direction: column; z-index: 40; overflow: hidden;
@@ -165,13 +163,11 @@ header {
 }
 .file-action-btn:hover { color: var(--text-bright); background: rgba(255,255,255,0.1); }
 
-/* Editor Container */
 #editor-container {
   flex: 1 1 0%; display: flex; flex-direction: column; min-width: 0; min-height: 0;
   position: relative; background-color: var(--bg-editor); overflow: hidden;
 }
 
-/* Slide-down Search & Replace Bar */
 #search-replace-bar {
   display: none; background: var(--bg-titlebar); border-bottom: 1px solid var(--border-color);
   padding: 4px 8px; flex-direction: column; gap: 4px; z-index: 25; flex-shrink: 0;
@@ -183,7 +179,6 @@ header {
 }
 .sr-counter { font-size: 11px; color: var(--text-muted); min-width: 48px; text-align: center; }
 
-/* Accessory Bar */
 #mobile-accessory-bar {
   height: 36px; min-height: 36px; max-height: 36px; background-color: var(--bg-titlebar);
   border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 5px;
@@ -215,7 +210,6 @@ header {
   padding: 8px 12px; border: none; outline: none; resize: none; box-sizing: border-box; display: block; white-space: pre; overflow: auto; tab-size: 4;
 }
 
-/* Built-in RDE Touch Keyboard */
 #rde-virtual-keyboard {
   display: none; flex-direction: column; height: 156px; min-height: 156px; max-height: 156px;
   background-color: var(--kb-bg); border-top: 2px solid var(--border-color); padding: 4px 6px; gap: 4px; z-index: 60; flex-shrink: 0; user-select: none;
@@ -233,7 +227,6 @@ header {
 .vk-btn.wide-2 { flex: 2; }
 .vk-btn.space-btn { flex: 4; }
 
-/* Bottom Panel */
 #bottom-panel {
   height: 110px; min-height: 28px; max-height: 55vh; background-color: var(--bg-panel);
   border-top: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 30; flex-shrink: 0; position: relative;
@@ -271,7 +264,6 @@ header {
   border-radius: 4px; color: #ffffff; padding: 0 8px; font-family: "JetBrains Mono", monospace; font-size: 11px; outline: none;
 }
 
-/* Status Bar */
 #status-bar {
   height: 22px; min-height: 22px; max-height: 22px; background-color: var(--statusbar-bg);
   color: #ffffff; font-size: 10.5px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; z-index: 50; flex-shrink: 0;
@@ -281,7 +273,6 @@ header {
 .status-dot.ready { background-color: #00ff88; }
 .status-dot.running { background-color: #00e5ff; }
 
-/* Modals */
 .rde-modal {
   display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;
@@ -305,11 +296,9 @@ header {
 .opt-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); color: #ffffff; }
 .settings-footer { padding: 8px 14px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; }
 
-/* Web Live Preview Modal */
 #preview-modal .settings-card { width: 95%; max-width: 800px; height: 85vh; max-height: 85vh; }
 #preview-iframe { width: 100%; height: 100%; border: none; background: #ffffff; }
 
-/* Extensions Marketplace Modal */
 #marketplace-modal .settings-card { width: 92%; max-width: 560px; height: 80vh; max-height: 80vh; }
 .marketplace-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding: 0 14px; background: rgba(0,0,0,0.15); }
 .mp-tab {
@@ -340,7 +329,6 @@ header {
 .ext-btn.btn-active { background: #107c41; color: #fff; border-color: #107c41; }
 .ext-btn.btn-danger { color: var(--accent-red); border-color: rgba(241, 76, 76, 0.3); }
 
-/* Tree View Explorer */
 .tree-folder { display: flex; flex-direction: column; width: 100%; user-select: none; }
 .tree-folder-header {
   display: flex; align-items: center; justify-content: space-between; padding: 5px 8px;
@@ -352,7 +340,6 @@ header {
 .tree-folder-children { display: flex; flex-direction: column; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.06); margin-left: 8px; }
 .tree-folder.collapsed > .tree-folder-children { display: none; }
 
-/* VS Code Style Welcome Page */
 #welcome-view {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: var(--bg-editor); z-index: 15; display: none;
@@ -391,7 +378,6 @@ header {
   border-top: 1px solid var(--border-color); padding-top: 14px;
 }
 
-/* CodeMirror Cursor Caret & High Visibility */
 .CodeMirror-cursor {
   border-left: 2px solid var(--accent-orange, #ff6600) !important;
   border-right: none !important;
@@ -402,7 +388,6 @@ header {
   visibility: visible !important;
 }
 
-/* Virtual Keyboard Caps Lock Visual Indication */
 .vk-btn.caps-lock {
   background: var(--accent-orange, #ff6600) !important;
   color: #ffffff !important;
