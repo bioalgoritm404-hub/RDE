@@ -157,13 +157,16 @@
         <!-- Touch Accessory Bar with Keyboard Toggle & Selection Actions -->
         <div id="mobile-accessory-bar">
           <button class="btn-kb-toggle" id="btn-toggle-keyboard" title="Toggle Keyboard">
-            <span>⌨️</span><span id="kb-btn-text">Type</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6" y2="8"/><line x1="10" y1="8" x2="10" y2="8"/><line x1="14" y1="8" x2="14" y2="8"/><line x1="18" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="6" y2="12"/><line x1="10" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="14" y2="12"/><line x1="18" y1="12" x2="18" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+            <span id="kb-btn-text">Type</span>
           </button>
           <button class="acc-key acc-key-action" id="btn-select-all" title="Select All">Select All</button>
           <button class="acc-key acc-key-action" id="btn-copy-sel" title="Copy Selection">Copy</button>
           <button class="acc-key acc-key-action" id="btn-paste-sel" title="Paste">Paste</button>
           <button class="acc-key" data-insert="    ">Tab</button>
           <button class="acc-key" data-insert=":">:</button>
+          <button class="acc-key" data-insert="!">!</button>
+          <button class="acc-key" data-insert="!=">!=</button>
           <button class="acc-key" data-pair="()">()</button>
           <button class="acc-key" data-pair="[]">[]</button>
           <button class="acc-key" data-pair="{}">{}</button>
@@ -291,6 +294,7 @@
         <button class="vk-btn" data-key="8">8</button>
         <button class="vk-btn" data-key="9">9</button>
         <button class="vk-btn" data-key="0">0</button>
+        <button class="vk-btn" data-key="!">!</button>
         <button class="vk-btn fn" data-action="pair_paren">()</button>
         <button class="vk-btn fn" data-action="pair_brack">[]</button>
         <button class="vk-btn fn" data-action="pair_brace">{}</button>
@@ -302,8 +306,8 @@
         <button class="vk-btn fn wide-15" data-action="backspace">⌫</button>
       </div>
 
-      <!-- Row 2: QWERTY Row 1 -->
-      <div class="kb-row">
+      <!-- Row 2: Letters Row 1 -->
+      <div class="kb-row" id="kb-row-2">
         <button class="vk-btn fn wide-15" data-action="tab">Tab</button>
         <button class="vk-btn" data-key="q">q</button>
         <button class="vk-btn" data-key="w">w</button>
@@ -322,8 +326,8 @@
         <button class="vk-btn" data-key="_">_</button>
       </div>
 
-      <!-- Row 3: QWERTY Row 2 -->
-      <div class="kb-row">
+      <!-- Row 3: Letters Row 2 -->
+      <div class="kb-row" id="kb-row-3">
         <button class="vk-btn fn wide-15" id="vk-shift-btn" data-action="shift">⇧ Shift</button>
         <button class="vk-btn" data-key="a">a</button>
         <button class="vk-btn" data-key="s">s</button>
@@ -339,8 +343,8 @@
         <button class="vk-btn fn wide-2" data-action="enter">⏎ Enter</button>
       </div>
 
-      <!-- Row 4: QWERTY Row 3 & Navigation Arrows -->
-      <div class="kb-row">
+      <!-- Row 4: Letters Row 3 & Navigation Arrows -->
+      <div class="kb-row" id="kb-row-4">
         <button class="vk-btn fn" id="vk-ctrl-btn" data-action="ctrl">Ctrl</button>
         <button class="vk-btn" data-key="z">z</button>
         <button class="vk-btn" data-key="x">x</button>
@@ -351,6 +355,7 @@
         <button class="vk-btn" data-key="m">m</button>
         <button class="vk-btn" data-key=",">,</button>
         <button class="vk-btn" data-key=".">.</button>
+        <button class="vk-btn fn" id="vk-lang-btn" data-action="toggle_lang" style="min-width:34px; font-weight:700; color:var(--accent-cyan);" title="Switch Language">RU</button>
         <button class="vk-btn space-btn" data-action="space">␣ Space</button>
         <button class="vk-btn fn" data-action="left">←</button>
         <button class="vk-btn fn" data-action="up">↑</button>
@@ -524,12 +529,34 @@
       <div class="marketplace-tabs">
         <div class="mp-tab active" id="marketplace-tab-all">All Extensions</div>
         <div class="mp-tab" id="marketplace-tab-installed">Installed</div>
+        <div class="mp-tab" id="marketplace-tab-import">Import / Script</div>
       </div>
-      <div class="marketplace-search-row">
+      <div class="marketplace-search-row" id="marketplace-search-row">
         <input type="text" id="marketplace-search" class="sr-input" placeholder="Search extensions (e.g. lofi, format, snippets)...">
       </div>
       <div class="marketplace-list" id="marketplace-list">
         <!-- Rendered dynamically by plugins.js -->
+      </div>
+
+      <!-- Import Custom Plugin View -->
+      <div id="marketplace-import-container" style="display:none; flex-direction:column; padding:12px 14px; gap:10px; flex:1; overflow-y:auto;">
+        <input type="file" id="plugin-file-picker" accept=".js" style="display:none">
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <button class="btn-run" id="btn-import-plugin-file" style="height:30px; padding:0 12px; font-size:11.5px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Import Plugin (.js)
+          </button>
+          <button class="opt-btn" id="btn-load-sample-plugin" style="padding:4px 10px; font-size:11px;">
+            Load sample my_plugin.js
+          </button>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); font-weight:600;">OR QUICK SCRIPT PASTE:</div>
+        <textarea id="custom-plugin-code" class="sr-input" style="height:120px; font-family:monospace; font-size:11px; padding:8px; line-height:1.4; resize:vertical;" placeholder="// Paste plugin JavaScript code here...&#10;window.rdeAPI.registerPlugin({&#10;  id: 'my.custom.id',&#10;  name: 'My Tool',&#10;  init: function(api) { ... }&#10;});"></textarea>
+        <div>
+          <button class="btn-run" id="btn-eval-custom-plugin" style="height:28px; padding:0 14px; font-size:11.5px;">
+            Execute &amp; Register Plugin
+          </button>
+        </div>
       </div>
     </div>
   </div>

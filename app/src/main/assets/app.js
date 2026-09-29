@@ -361,12 +361,15 @@ function saveCurrentFileToDevice(targetName) {
   files[targetName] = content;
   saveStoredFiles(files);
 
-  if (window.AndroidBridge && typeof window.AndroidBridge.saveFileToDownloads === "function") {
+  if (window.AndroidBridge && typeof window.AndroidBridge.saveFile === "function") {
+    window.AndroidBridge.saveFile(targetName, content);
+  } else if (window.AndroidBridge && typeof window.AndroidBridge.saveFileToDownloads === "function") {
     window.AndroidBridge.saveFileToDownloads(targetName, content);
   } else {
     // Browser fallback download
     try {
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const mime = targetName.endsWith(".py") ? "text/x-python" : (targetName.endsWith(".html") ? "text/html" : "text/plain");
+      const blob = new Blob([content], { type: `${mime};charset=utf-8` });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -375,10 +378,27 @@ function saveCurrentFileToDevice(targetName) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      appendOutputText(`[Saved] Exported ${targetName} to Downloads.\n`, "success");
+      appendOutputText(`[Saved] Exported ${targetName}.\n`, "success");
     } catch (e) {
       appendOutputText(`[Error] Failed to save file: ${e.message}\n`, "stderr");
     }
+  }
+}
+
+function saveCurrentFileAs() {
+  const t = I18N[appSettings.language] || I18N.ru;
+  const newName = prompt(t.enterFileName, currentFileName);
+  if (!newName || !newName.trim()) return;
+  const clean = newName.trim();
+  const content = editor ? editor.getValue() : (files[currentFileName] || "");
+  files[clean] = content;
+  saveStoredFiles(files);
+  switchToFile(clean);
+
+  if (window.AndroidBridge && typeof window.AndroidBridge.saveFileAs === "function") {
+    window.AndroidBridge.saveFileAs(clean, content);
+  } else {
+    saveCurrentFileToDevice(clean);
   }
 }
 
@@ -602,35 +622,138 @@ function setKeyboardOpen(open) {
   }
 }
 
-// --- 8. VIRTUAL KEYBOARD ACTIONS ---
+// --- 8. VIRTUAL KEYBOARD ACTIONS & MULTILINGUAL LAYOUTS ---
+let currentKeyboardLayout = "en"; // 'en' or 'ru'
+
+const KB_LAYOUTS = {
+  en: {
+    langBtnText: "RU",
+    row2: [
+      { type: "fn", action: "tab", label: "Tab", cls: "wide-15" },
+      { key: "q" }, { key: "w" }, { key: "e" }, { key: "r" }, { key: "t" },
+      { key: "y" }, { key: "u" }, { key: "i" }, { key: "o" }, { key: "p" },
+      { key: "+" }, { key: "-" }, { key: "*" }, { key: "/" }, { key: "_" }
+    ],
+    row3: [
+      { type: "fn", id: "vk-shift-btn", action: "shift", label: "⇧ Shift", cls: "wide-15" },
+      { key: "a" }, { key: "s" }, { key: "d" }, { key: "f" }, { key: "g" },
+      { key: "h" }, { key: "j" }, { key: "k" }, { key: "l" },
+      { type: "insert", insert: "def ", label: "def" },
+      { type: "insert", insert: "return ", label: "ret" },
+      { type: "fn", action: "enter", label: "⏎ Enter", cls: "wide-2" }
+    ],
+    row4: [
+      { type: "fn", id: "vk-ctrl-btn", action: "ctrl", label: "Ctrl" },
+      { key: "z" }, { key: "x" }, { key: "c" }, { key: "v" },
+      { key: "b" }, { key: "n" }, { key: "m" }, { key: "," }, { key: "." },
+      { type: "fn", id: "vk-lang-btn", action: "toggle_lang", label: "RU", style: "min-width:34px; font-weight:700; color:var(--accent-cyan);" },
+      { type: "fn", action: "space", label: "␣ Space", cls: "space-btn" },
+      { type: "fn", action: "left", label: "←" },
+      { type: "fn", action: "up", label: "↑" },
+      { type: "fn", action: "down", label: "↓" },
+      { type: "fn", action: "right", label: "→" },
+      { type: "fn", action: "hide_kb", label: "▼" }
+    ]
+  },
+  ru: {
+    langBtnText: "EN",
+    row2: [
+      { type: "fn", action: "tab", label: "Tab", cls: "wide-15" },
+      { key: "й" }, { key: "ц" }, { key: "у" }, { key: "к" }, { key: "е" },
+      { key: "н" }, { key: "г" }, { key: "ш" }, { key: "щ" }, { key: "з" },
+      { key: "х" }, { key: "ъ" }, { key: "+" }, { key: "-" }, { key: "/" }
+    ],
+    row3: [
+      { type: "fn", id: "vk-shift-btn", action: "shift", label: "⇧ Shift", cls: "wide-15" },
+      { key: "ф" }, { key: "ы" }, { key: "в" }, { key: "а" }, { key: "п" },
+      { key: "р" }, { key: "о" }, { key: "л" }, { key: "д" }, { key: "ж" },
+      { key: "э" },
+      { type: "insert", insert: "def ", label: "def" },
+      { type: "fn", action: "enter", label: "⏎ Enter", cls: "wide-2" }
+    ],
+    row4: [
+      { type: "fn", id: "vk-ctrl-btn", action: "ctrl", label: "Ctrl" },
+      { key: "я" }, { key: "ч" }, { key: "с" }, { key: "м" },
+      { key: "и" }, { key: "т" }, { key: "ь" }, { key: "б" }, { key: "ю" }, { key: "." },
+      { type: "fn", id: "vk-lang-btn", action: "toggle_lang", label: "EN", style: "min-width:34px; font-weight:700; color:var(--accent-cyan);" },
+      { type: "fn", action: "space", label: "␣ Space", cls: "space-btn" },
+      { type: "fn", action: "left", label: "←" },
+      { type: "fn", action: "up", label: "↑" },
+      { type: "fn", action: "down", label: "↓" },
+      { type: "fn", action: "right", label: "→" },
+      { type: "fn", action: "hide_kb", label: "▼" }
+    ]
+  }
+};
+
+function renderKeyboardRows() {
+  const layout = KB_LAYOUTS[currentKeyboardLayout] || KB_LAYOUTS.en;
+  ["row2", "row3", "row4"].forEach((rName, idx) => {
+    const rowEl = document.getElementById(`kb-row-${idx + 2}`);
+    if (!rowEl) return;
+    rowEl.innerHTML = "";
+    layout[rName].forEach(def => {
+      const btn = document.createElement("button");
+      btn.className = `vk-btn ${def.cls || ""}`;
+      if (def.id) btn.id = def.id;
+      if (def.style) btn.style.cssText = def.style;
+      if (def.key) {
+        btn.setAttribute("data-key", def.key);
+        btn.textContent = isShiftActive ? def.key.toUpperCase() : def.key.toLowerCase();
+        btn.addEventListener("click", () => {
+          let char = def.key;
+          if (isShiftActive) {
+            char = char.toUpperCase();
+            setShiftActive(false);
+          }
+          if (isCtrlActive) {
+            handleCtrlShortcut(char.toLowerCase());
+            setCtrlActive(false);
+            return;
+          }
+          insertTextIntoEditor(char);
+        });
+      } else if (def.insert) {
+        btn.setAttribute("data-insert", def.insert);
+        btn.textContent = def.label;
+        btn.addEventListener("click", () => insertTextIntoEditor(def.insert));
+      } else if (def.action) {
+        btn.setAttribute("data-action", def.action);
+        btn.textContent = def.label;
+        btn.addEventListener("click", () => handleVirtualAction(def.action));
+      }
+      rowEl.appendChild(btn);
+    });
+  });
+  if (isShiftActive) setShiftActive(true);
+  if (isCtrlActive) setCtrlActive(true);
+}
+
+function toggleVirtualKeyboardLayout() {
+  currentKeyboardLayout = currentKeyboardLayout === "en" ? "ru" : "en";
+  renderKeyboardRows();
+  if (window.AndroidBridge && typeof window.AndroidBridge.showToast === "function") {
+    window.AndroidBridge.showToast(`Keyboard: ${currentKeyboardLayout.toUpperCase()}`);
+  }
+}
+
 function setupVirtualKeyboard() {
-  document.querySelectorAll(".vk-btn[data-key]").forEach(btn => {
+  // Bind Row 1 (Numbers and symbols)
+  document.querySelectorAll(".kb-row:first-child .vk-btn[data-key]").forEach(btn => {
     btn.addEventListener("click", () => {
       let char = btn.getAttribute("data-key");
-      if (isShiftActive && char.length === 1) {
-        char = char.toUpperCase();
-        setShiftActive(false);
-      }
-      if (isCtrlActive) {
-        handleCtrlShortcut(char.toLowerCase());
-        setCtrlActive(false);
-        return;
-      }
       insertTextIntoEditor(char);
     });
   });
 
-  document.querySelectorAll(".vk-btn[data-insert]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      insertTextIntoEditor(btn.getAttribute("data-insert"));
-    });
-  });
-
-  document.querySelectorAll(".vk-btn[data-action]").forEach(btn => {
+  document.querySelectorAll(".kb-row:first-child .vk-btn[data-action]").forEach(btn => {
     btn.addEventListener("click", () => {
       handleVirtualAction(btn.getAttribute("data-action"));
     });
   });
+
+  // Render Rows 2, 3, 4 dynamically according to layout
+  renderKeyboardRows();
 }
 
 function setShiftActive(active) {
@@ -639,7 +762,7 @@ function setShiftActive(active) {
   if (btn) btn.classList.toggle("active", active);
   document.querySelectorAll(".vk-btn[data-key]").forEach(b => {
     const k = b.getAttribute("data-key");
-    if (k && k.length === 1 && k >= 'a' && k <= 'z') {
+    if (k && k.length === 1 && k.toLowerCase() !== k.toUpperCase()) {
       b.textContent = active ? k.toUpperCase() : k.toLowerCase();
     }
   });
@@ -666,6 +789,10 @@ function handleCtrlShortcut(key) {
 }
 
 function handleVirtualAction(action) {
+  if (action === "toggle_lang") {
+    toggleVirtualKeyboardLayout();
+    return;
+  }
   if (!editor) return;
   if (action === "backspace") {
     handleBackspace(editor);

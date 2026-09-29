@@ -161,9 +161,28 @@
     registerPlugin: function(manifest) {
       if (!manifest || !manifest.id) return;
       activePlugins.set(manifest.id, manifest);
+
+      // Add to catalog if not present
+      if (!catalog.find(p => p.id === manifest.id)) {
+        catalog.push({
+          id: manifest.id,
+          name: manifest.name || "Custom Plugin",
+          author: manifest.author || "User",
+          version: manifest.version || "1.0.0",
+          description: manifest.description || "User imported plugin.",
+          icon: manifest.icon || `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>`,
+          isInstalled: true,
+          isEnabled: true,
+          init: manifest.init,
+          cleanup: manifest.cleanup
+        });
+        saveCatalog();
+      }
+
       if (typeof manifest.init === "function") {
         manifest.init(window.rdeAPI);
       }
+      renderMarketplaceUI();
     },
 
     // 2. Toolbar & UI Extension
@@ -300,14 +319,37 @@
   }
 
   // --- MARKETPLACE MODAL RENDERING ---
-  let activeTab = "all"; // 'all' or 'installed'
+  let activeTab = "all"; // 'all', 'installed', or 'import'
+
+  function saveCustomPluginScript(scriptText) {
+    try {
+      const list = JSON.parse(localStorage.getItem("rde_user_custom_plugins_scripts_v1") || "[]");
+      if (!list.includes(scriptText)) {
+        list.push(scriptText);
+        localStorage.setItem("rde_user_custom_plugins_scripts_v1", JSON.stringify(list));
+      }
+    } catch (_) {}
+  }
 
   function renderMarketplaceUI() {
     const container = document.getElementById("marketplace-list");
+    const importContainer = document.getElementById("marketplace-import-container");
+    const searchRow = document.getElementById("marketplace-search-row");
     if (!container) return;
+
+    if (activeTab === "import") {
+      container.style.display = "none";
+      if (searchRow) searchRow.style.display = "none";
+      if (importContainer) importContainer.style.display = "flex";
+      return;
+    }
+
+    container.style.display = "block";
+    if (searchRow) searchRow.style.display = "flex";
+    if (importContainer) importContainer.style.display = "none";
     container.innerHTML = "";
 
-    const searchQuery = (document.getElementById("marketplace-search")?.value || "").toLowerCase();
+    const searchQuery = (document.getElementById("marketplace-search")?.value || "").toLowerCase().trim();
 
     const filtered = catalog.filter(ext => {
       const matchesTab = activeTab === "all" ? true : ext.isInstalled;
@@ -369,11 +411,24 @@
 
   // --- INITIALIZE ENABLED EXTENSIONS ---
   window.addEventListener("DOMContentLoaded", () => {
+    // Run enabled built-in plugins
     catalog.forEach(ext => {
       if (ext.isInstalled && ext.isEnabled && typeof ext.init === "function") {
         ext.init(window.rdeAPI);
       }
     });
+
+    // Run stored custom plugin scripts
+    try {
+      const savedScripts = JSON.parse(localStorage.getItem("rde_user_custom_plugins_scripts_v1") || "[]");
+      savedScripts.forEach(scriptCode => {
+        try {
+          new Function(scriptCode)();
+        } catch (e) {
+          console.warn("Failed executing stored custom plugin:", e);
+        }
+      });
+    } catch (_) {}
 
     // Marketplace triggers
     const modal = document.getElementById("marketplace-modal");
@@ -391,20 +446,87 @@
       modal.style.display = "none";
     });
 
-    document.getElementById("marketplace-tab-all")?.addEventListener("click", () => {
+    const tabAll = document.getElementById("marketplace-tab-all");
+    const tabInstalled = document.getElementById("marketplace-tab-installed");
+    const tabImport = document.getElementById("marketplace-tab-import");
+
+    tabAll?.addEventListener("click", () => {
       activeTab = "all";
-      document.getElementById("marketplace-tab-all").classList.add("active");
-      document.getElementById("marketplace-tab-installed").classList.remove("active");
+      tabAll.classList.add("active");
+      tabInstalled?.classList.remove("active");
+      tabImport?.classList.remove("active");
       renderMarketplaceUI();
     });
 
-    document.getElementById("marketplace-tab-installed")?.addEventListener("click", () => {
+    tabInstalled?.addEventListener("click", () => {
       activeTab = "installed";
-      document.getElementById("marketplace-tab-installed").classList.add("active");
-      document.getElementById("marketplace-tab-all").classList.remove("active");
+      tabInstalled.classList.add("active");
+      tabAll?.classList.remove("active");
+      tabImport?.classList.remove("active");
+      renderMarketplaceUI();
+    });
+
+    tabImport?.addEventListener("click", () => {
+      activeTab = "import";
+      tabImport.classList.add("active");
+      tabAll?.classList.remove("active");
+      tabInstalled?.classList.remove("active");
       renderMarketplaceUI();
     });
 
     document.getElementById("marketplace-search")?.addEventListener("input", renderMarketplaceUI);
+
+    // Custom Plugin File Picker
+    const pluginPicker = document.getElementById("plugin-file-picker");
+    document.getElementById("btn-import-plugin-file")?.addEventListener("click", () => {
+      pluginPicker?.click();
+    });
+
+    pluginPicker?.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const code = event.target.result;
+        try {
+          new Function(code)();
+          saveCustomPluginScript(code);
+          window.rdeAPI.showNotification(`Imported & registered "${file.name}"!`, "success");
+        } catch (err) {
+          window.rdeAPI.showNotification(`Plugin script error: ${err.message}`, "stderr");
+        }
+      };
+      reader.readAsText(file);
+      pluginPicker.value = "";
+    });
+
+    // Custom Plugin Code Evaluation
+    document.getElementById("btn-eval-custom-plugin")?.addEventListener("click", () => {
+      const textarea = document.getElementById("custom-plugin-code");
+      if (!textarea || !textarea.value.trim()) return;
+      const code = textarea.value.trim();
+      try {
+        new Function(code)();
+        saveCustomPluginScript(code);
+        textarea.value = "";
+        window.rdeAPI.showNotification("Custom script registered as plugin!", "success");
+      } catch (err) {
+        window.rdeAPI.showNotification(`Execution error: ${err.message}`, "stderr");
+      }
+    });
+
+    // Load sample my_plugin.js
+    document.getElementById("btn-load-sample-plugin")?.addEventListener("click", () => {
+      fetch("my_plugin.js")
+        .then(res => res.text())
+        .then(code => {
+          new Function(code)();
+          saveCustomPluginScript(code);
+          window.rdeAPI.showNotification("Loaded template my_plugin.js successfully!", "success");
+        })
+        .catch(err => {
+          window.rdeAPI.showNotification(`Load error: ${err.message}`, "stderr");
+        });
+    });
   });
 })();

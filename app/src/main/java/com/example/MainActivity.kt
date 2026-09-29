@@ -51,6 +51,8 @@ class MainActivity : ComponentActivity() {
 
     var currentWebView: WebView? = null
     var fileChooserCallback: ValueCallback<Array<Uri>>? = null
+    var currentWorkspaceUri: Uri? = null
+    var pendingSaveContent: String? = null
 
     val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -75,7 +77,83 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    val saveDocumentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            val dataToWrite = pendingSaveContent
+            if (uri != null && dataToWrite != null) {
+                try {
+                    contentResolver.openOutputStream(uri, "wt")?.use { out ->
+                        out.write(dataToWrite.toByteArray(Charsets.UTF_8))
+                        out.flush()
+                    }
+                    Toast.makeText(this, "Saved successfully!", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Save error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        pendingSaveContent = null
+    }
+
+    fun launchSaveAsPicker(suggestedName: String, content: String) {
+        pendingSaveContent = content
+        val mime = getMimeTypeForFilename(suggestedName)
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = mime
+            putExtra(Intent.EXTRA_TITLE, suggestedName)
+        }
+        saveDocumentLauncher.launch(intent)
+    }
+
+    fun getMimeTypeForFilename(name: String): String {
+        val lower = name.lowercase()
+        return when {
+            lower.endsWith(".py") -> "text/x-python"
+            lower.endsWith(".html") || lower.endsWith(".htm") -> "text/html"
+            lower.endsWith(".js") -> "application/javascript"
+            lower.endsWith(".json") -> "application/json"
+            lower.endsWith(".css") -> "text/css"
+            lower.endsWith(".md") || lower.endsWith(".txt") -> "text/plain"
+            else -> "application/octet-stream"
+        }
+    }
+
+    fun saveFileToWorkspace(relativePath: String, content: String): Boolean {
+        val wsUri = currentWorkspaceUri ?: return false
+        val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, wsUri) ?: return false
+        try {
+            val parts = relativePath.split("/").filter { it.isNotEmpty() }
+            if (parts.isEmpty()) return false
+            var currentDir = rootDoc
+            for (i in 0 until parts.size - 1) {
+                val dirName = parts[i]
+                var subDir = currentDir.findFile(dirName)
+                if (subDir == null || !subDir.isDirectory) {
+                    subDir = currentDir.createDirectory(dirName) ?: return false
+                }
+                currentDir = subDir
+            }
+            val fileName = parts.last()
+            var targetFile = currentDir.findFile(fileName)
+            if (targetFile == null || !targetFile.isFile) {
+                val mime = getMimeTypeForFilename(fileName)
+                targetFile = currentDir.createFile(mime, fileName) ?: return false
+            }
+            contentResolver.openOutputStream(targetFile.uri, "wt")?.use { out ->
+                out.write(content.toByteArray(Charsets.UTF_8))
+                out.flush()
+            }
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
     private fun loadDirectoryTree(treeUri: Uri) {
+        currentWorkspaceUri = treeUri
         val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(this, treeUri) ?: return
         val rootName = rootDoc.name ?: "Workspace"
         Toast.makeText(this, "Reading folder: $rootName...", Toast.LENGTH_SHORT).show()
@@ -330,6 +408,29 @@ class AndroidBridge(private val activity: Activity, private val webView: WebView
     fun openDirectoryPicker() {
         activity.runOnUiThread {
             (activity as? MainActivity)?.openDirectoryLauncher?.launch(null)
+        }
+    }
+
+    @JavascriptInterface
+    fun saveFile(fileName: String, content: String) {
+        activity.runOnUiThread {
+            val mainAct = activity as? MainActivity
+            if (mainAct != null && mainAct.currentWorkspaceUri != null) {
+                val success = mainAct.saveFileToWorkspace(fileName, content)
+                if (success) {
+                    Toast.makeText(activity, "Saved: $fileName", Toast.LENGTH_SHORT).show()
+                    return@runOnUiThread
+                }
+            }
+            // Fallback to SAF Save As picker if workspace is not set
+            (activity as? MainActivity)?.launchSaveAsPicker(fileName, content)
+        }
+    }
+
+    @JavascriptInterface
+    fun saveFileAs(suggestedName: String, content: String) {
+        activity.runOnUiThread {
+            (activity as? MainActivity)?.launchSaveAsPicker(suggestedName, content)
         }
     }
 
