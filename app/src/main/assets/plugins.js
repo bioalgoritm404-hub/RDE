@@ -129,14 +129,72 @@
     }
   ];
 
+  const UNINSTALLED_STORAGE_KEY = "rde_uninstalled_plugins_v2";
+  const CUSTOM_PLUGINS_META_KEY = "rde_custom_plugins_meta_v2";
+
+  function markPluginUninstalled(pluginId) {
+    if (!pluginId) return;
+    try {
+      const list = JSON.parse(localStorage.getItem(UNINSTALLED_STORAGE_KEY) || "[]");
+      if (!list.includes(pluginId)) {
+        list.push(pluginId);
+        localStorage.setItem(UNINSTALLED_STORAGE_KEY, JSON.stringify(list));
+      }
+    } catch (_) {}
+  }
+
+  function unmarkPluginUninstalled(pluginId) {
+    if (!pluginId) return;
+    try {
+      let list = JSON.parse(localStorage.getItem(UNINSTALLED_STORAGE_KEY) || "[]");
+      list = list.filter(id => id !== pluginId);
+      localStorage.setItem(UNINSTALLED_STORAGE_KEY, JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  function isPluginUninstalled(pluginId) {
+    if (!pluginId) return false;
+    try {
+      const list = JSON.parse(localStorage.getItem(UNINSTALLED_STORAGE_KEY) || "[]");
+      return list.includes(pluginId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function saveCustomPlugin(pluginId, scriptCode, fileName) {
+    if (!pluginId || !scriptCode) return;
+    try {
+      let list = JSON.parse(localStorage.getItem(CUSTOM_PLUGINS_META_KEY) || "[]");
+      list = list.filter(p => p.id !== pluginId);
+      list.push({ id: pluginId, code: scriptCode, fileName: fileName || "plugin.js" });
+      localStorage.setItem(CUSTOM_PLUGINS_META_KEY, JSON.stringify(list));
+      localStorage.removeItem("rde_user_custom_plugins_scripts_v1");
+    } catch (_) {}
+  }
+
+  function removeCustomPlugin(pluginId) {
+    if (!pluginId) return;
+    try {
+      let list = JSON.parse(localStorage.getItem(CUSTOM_PLUGINS_META_KEY) || "[]");
+      list = list.filter(p => p.id !== pluginId);
+      localStorage.setItem(CUSTOM_PLUGINS_META_KEY, JSON.stringify(list));
+      localStorage.removeItem("rde_user_custom_plugins_scripts_v1");
+    } catch (_) {}
+  }
+
   let catalog = loadCatalog();
 
   function loadCatalog() {
     try {
       const stored = localStorage.getItem(MARKETPLACE_STORAGE_KEY);
+      const uninstalled = JSON.parse(localStorage.getItem(UNINSTALLED_STORAGE_KEY) || "[]");
       if (stored) {
         const parsed = JSON.parse(stored);
         return DEFAULT_CATALOG.map(def => {
+          if (uninstalled.includes(def.id)) {
+            return { ...def, isInstalled: false, isEnabled: false };
+          }
           const found = parsed.find(p => p.id === def.id);
           return found ? { ...def, isInstalled: found.isInstalled, isEnabled: found.isEnabled } : def;
         });
@@ -144,7 +202,7 @@
     } catch (e) {
       console.warn("Marketplace load error:", e);
     }
-    return DEFAULT_CATALOG;
+    return DEFAULT_CATALOG.map(def => ({ ...def }));
   }
 
   function saveCatalog() {
@@ -157,11 +215,24 @@
   }
 
   let currentRegisteringPluginId = null;
+  let lastRegisteredPluginId = null;
+  let isExplicitImportInProgress = false;
 
   window.rdeAPI = {
     // 1. Plugin Registration & Execution
     registerPlugin: function(manifest) {
       if (!manifest || !manifest.id) return;
+      lastRegisteredPluginId = manifest.id;
+
+      // If user uninstalled this plugin and this is an automatic startup load, skip it completely!
+      if (isPluginUninstalled(manifest.id) && !isExplicitImportInProgress) {
+        return;
+      }
+
+      // If user explicitly imported this plugin, restore it from uninstalled list
+      if (isExplicitImportInProgress) {
+        unmarkPluginUninstalled(manifest.id);
+      }
 
       // Lifecycle Cleanup if plugin is re-registered
       const existing = activePlugins.get(manifest.id);
@@ -194,6 +265,7 @@
       } else {
         existingCatalogEntry.init = manifest.init;
         existingCatalogEntry.cleanup = manifest.cleanup;
+        existingCatalogEntry.isInstalled = true;
         existingCatalogEntry.isEnabled = true;
         saveCatalog();
       }
@@ -331,6 +403,7 @@
     installExtension: function(id) {
       const ext = catalog.find(p => p.id === id);
       if (!ext) return;
+      unmarkPluginUninstalled(id);
       ext.isInstalled = true;
       ext.isEnabled = true;
       saveCatalog();
@@ -341,13 +414,24 @@
 
     uninstallExtension: function(id) {
       window.rdeAPI.unregisterPlugin(id);
+      markPluginUninstalled(id);
+      removeCustomPlugin(id);
+
+      const isDefault = DEFAULT_CATALOG.some(d => d.id === id);
       const ext = catalog.find(p => p.id === id);
-      if (ext) {
-        ext.isInstalled = false;
-        ext.isEnabled = false;
-        saveCatalog();
-        window.rdeAPI.showNotification(`Uninstalled "${ext.name}".`, "info");
+      const pluginName = ext ? ext.name : id;
+
+      if (isDefault) {
+        if (ext) {
+          ext.isInstalled = false;
+          ext.isEnabled = false;
+        }
+      } else {
+        // Custom plugin: remove completely from catalog
+        catalog = catalog.filter(p => p.id !== id);
       }
+      saveCatalog();
+      window.rdeAPI.showNotification(`Плагин "${pluginName}" удалён.`, "info");
       renderMarketplaceUI();
     },
 
@@ -394,14 +478,25 @@
   // --- MARKETPLACE MODAL RENDERING ---
   let activeTab = "all"; // 'all', 'installed', or 'import'
 
-  function saveCustomPluginScript(scriptText) {
+  function importCustomScript(scriptCode, fileName = "plugin.js") {
+    if (!scriptCode || !scriptCode.trim()) return;
+    lastRegisteredPluginId = null;
+    isExplicitImportInProgress = true;
     try {
-      const list = JSON.parse(localStorage.getItem("rde_user_custom_plugins_scripts_v1") || "[]");
-      if (!list.includes(scriptText)) {
-        list.push(scriptText);
-        localStorage.setItem("rde_user_custom_plugins_scripts_v1", JSON.stringify(list));
+      new Function(scriptCode)();
+      const pluginId = lastRegisteredPluginId;
+      if (pluginId) {
+        unmarkPluginUninstalled(pluginId);
+        saveCustomPlugin(pluginId, scriptCode, fileName);
+        window.rdeAPI.showNotification(`Импортирован плагин "${fileName}"!`, "success");
+      } else {
+        window.rdeAPI.showNotification(`Скрипт "${fileName}" выполнен.`, "info");
       }
-    } catch (_) {}
+    } catch (err) {
+      window.rdeAPI.showNotification(`Ошибка выполнения плагина: ${err.message}`, "stderr");
+    } finally {
+      isExplicitImportInProgress = false;
+    }
   }
 
   function renderMarketplaceUI() {
@@ -484,19 +579,30 @@
 
   // --- INITIALIZE ENABLED EXTENSIONS ---
   window.addEventListener("DOMContentLoaded", () => {
-    // Run enabled built-in plugins
+    // 1. Purge obsolete unkeyed scripts storage
+    localStorage.removeItem("rde_user_custom_plugins_scripts_v1");
+
+    // 2. Run enabled built-in plugins (strictly skipping any uninstalled plugins)
     catalog.forEach(ext => {
-      if (ext.isInstalled && ext.isEnabled && typeof ext.init === "function") {
-        ext.init(window.rdeAPI);
+      if (ext.isInstalled && ext.isEnabled && !isPluginUninstalled(ext.id) && typeof ext.init === "function") {
+        currentRegisteringPluginId = ext.id;
+        try {
+          ext.init(window.rdeAPI);
+        } catch (e) {
+          console.warn("Init error:", e);
+        } finally {
+          currentRegisteringPluginId = null;
+        }
       }
     });
 
-    // Run stored custom plugin scripts
+    // 3. Run stored custom plugin scripts (strictly checking they were NOT uninstalled)
     try {
-      const savedScripts = JSON.parse(localStorage.getItem("rde_user_custom_plugins_scripts_v1") || "[]");
-      savedScripts.forEach(scriptCode => {
+      const customPlugins = JSON.parse(localStorage.getItem(CUSTOM_PLUGINS_META_KEY) || "[]");
+      customPlugins.forEach(item => {
+        if (!item || !item.id || isPluginUninstalled(item.id)) return;
         try {
-          new Function(scriptCode)();
+          new Function(item.code)();
         } catch (e) {
           console.warn("Failed executing stored custom plugin:", e);
         }
@@ -555,13 +661,7 @@
         window.rdeAPI.showNotification("Выберите файл с расширением .js", "stderr");
         return;
       }
-      try {
-        new Function(code)();
-        saveCustomPluginScript(code);
-        window.rdeAPI.showNotification(`Импортирован плагин "${fileName}"!`, "success");
-      } catch (err) {
-        window.rdeAPI.showNotification(`Ошибка выполнения плагина: ${err.message}`, "stderr");
-      }
+      importCustomScript(code, fileName);
     };
 
     // Custom Plugin File Picker
@@ -584,14 +684,7 @@
       }
       const reader = new FileReader();
       reader.onload = (event) => {
-        const code = event.target.result;
-        try {
-          new Function(code)();
-          saveCustomPluginScript(code);
-          window.rdeAPI.showNotification(`Импортирован плагин "${file.name}"!`, "success");
-        } catch (err) {
-          window.rdeAPI.showNotification(`Ошибка выполнения плагина: ${err.message}`, "stderr");
-        }
+        importCustomScript(event.target.result, file.name);
       };
       reader.readAsText(file);
       pluginPicker.value = "";
@@ -602,14 +695,8 @@
       const textarea = document.getElementById("custom-plugin-code");
       if (!textarea || !textarea.value.trim()) return;
       const code = textarea.value.trim();
-      try {
-        new Function(code)();
-        saveCustomPluginScript(code);
-        textarea.value = "";
-        window.rdeAPI.showNotification("Custom script registered as plugin!", "success");
-      } catch (err) {
-        window.rdeAPI.showNotification(`Execution error: ${err.message}`, "stderr");
-      }
+      importCustomScript(code, "pasted_script.js");
+      textarea.value = "";
     });
 
     // Load sample my_plugin.js
@@ -617,9 +704,7 @@
       fetch("my_plugin.js")
         .then(res => res.text())
         .then(code => {
-          new Function(code)();
-          saveCustomPluginScript(code);
-          window.rdeAPI.showNotification("Loaded template my_plugin.js successfully!", "success");
+          importCustomScript(code, "my_plugin.js");
         })
         .catch(err => {
           window.rdeAPI.showNotification(`Load error: ${err.message}`, "stderr");
