@@ -222,7 +222,9 @@ let editor = null;
 let pyodideInstance = null;
 let isPyodideLoading = true;
 let isExecuting = false;
+let shiftState = 0; // 0 = off, 1 = single shift (1 char), 2 = caps lock
 let isShiftActive = false;
+let lastShiftTapTime = 0;
 let isCtrlActive = false;
 let isKeyboardOpen = false;
 
@@ -686,6 +688,63 @@ const KB_LAYOUTS = {
   }
 };
 
+function setShiftState(state) {
+  shiftState = state;
+  isShiftActive = shiftState > 0;
+
+  const btn = document.getElementById("vk-shift-btn");
+  if (btn) {
+    btn.classList.toggle("active", shiftState > 0);
+    btn.classList.toggle("caps-lock", shiftState === 2);
+    if (shiftState === 2) {
+      btn.textContent = "⇪ CAPS";
+      btn.title = "Caps Lock Active";
+    } else if (shiftState === 1) {
+      btn.textContent = "⇧ Shift";
+      btn.title = "Shift Active (1 char)";
+    } else {
+      btn.textContent = "⇧ Shift";
+      btn.title = "Shift";
+    }
+  }
+
+  // Update letter keys for both EN and RU
+  const isUpper = shiftState > 0;
+  document.querySelectorAll(".vk-btn[data-key]").forEach(b => {
+    const k = b.getAttribute("data-key");
+    if (k && k.length === 1 && k.toLowerCase() !== k.toUpperCase()) {
+      b.textContent = isUpper ? k.toUpperCase() : k.toLowerCase();
+    }
+  });
+
+  if (editor && editor.focus) editor.focus();
+}
+
+function handleShiftTap() {
+  const now = Date.now();
+  const timeSinceLast = now - lastShiftTapTime;
+  lastShiftTapTime = now;
+
+  if (shiftState === 2) {
+    // Caps lock was on -> turn off
+    setShiftState(0);
+  } else if (shiftState === 1) {
+    // Was in single shift -> double tap within 300ms toggles CAPS LOCK
+    if (timeSinceLast < 300) {
+      setShiftState(2);
+    } else {
+      setShiftState(0);
+    }
+  } else {
+    // Was off (0) -> double tap within 300ms toggles CAPS LOCK, otherwise single shift
+    if (timeSinceLast < 300) {
+      setShiftState(2);
+    } else {
+      setShiftState(1);
+    }
+  }
+}
+
 function renderKeyboardRows() {
   const layout = KB_LAYOUTS[currentKeyboardLayout] || KB_LAYOUTS.en;
   ["row2", "row3", "row4"].forEach((rName, idx) => {
@@ -697,14 +756,22 @@ function renderKeyboardRows() {
       btn.className = `vk-btn ${def.cls || ""}`;
       if (def.id) btn.id = def.id;
       if (def.style) btn.style.cssText = def.style;
+
+      // Prevent losing editor focus on pointer/mouse touch
+      btn.addEventListener("pointerdown", (e) => e.preventDefault());
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+
       if (def.key) {
         btn.setAttribute("data-key", def.key);
-        btn.textContent = isShiftActive ? def.key.toUpperCase() : def.key.toLowerCase();
+        const isUpper = shiftState > 0;
+        btn.textContent = isUpper ? def.key.toUpperCase() : def.key.toLowerCase();
         btn.addEventListener("click", () => {
           let char = def.key;
-          if (isShiftActive) {
+          if (shiftState > 0 && char.length === 1 && char.toLowerCase() !== char.toUpperCase()) {
             char = char.toUpperCase();
-            setShiftActive(false);
+            if (shiftState === 1) {
+              setShiftState(0);
+            }
           }
           if (isCtrlActive) {
             handleCtrlShortcut(char.toLowerCase());
@@ -716,7 +783,9 @@ function renderKeyboardRows() {
       } else if (def.insert) {
         btn.setAttribute("data-insert", def.insert);
         btn.textContent = def.label;
-        btn.addEventListener("click", () => insertTextIntoEditor(def.insert));
+        btn.addEventListener("click", () => {
+          insertTextIntoEditor(def.insert);
+        });
       } else if (def.action) {
         btn.setAttribute("data-action", def.action);
         btn.textContent = def.label;
@@ -725,7 +794,8 @@ function renderKeyboardRows() {
       rowEl.appendChild(btn);
     });
   });
-  if (isShiftActive) setShiftActive(true);
+
+  setShiftState(shiftState);
   if (isCtrlActive) setCtrlActive(true);
 }
 
@@ -738,18 +808,27 @@ function toggleVirtualKeyboardLayout() {
 }
 
 function setupVirtualKeyboard() {
-  // Bind Row 1 (Numbers and symbols)
-  document.querySelectorAll(".kb-row:first-child .vk-btn[data-key]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      let char = btn.getAttribute("data-key");
-      insertTextIntoEditor(char);
-    });
-  });
+  const vkContainer = document.getElementById("rde-virtual-keyboard");
+  if (vkContainer) {
+    vkContainer.addEventListener("pointerdown", (e) => e.preventDefault());
+    vkContainer.addEventListener("mousedown", (e) => e.preventDefault());
+  }
 
-  document.querySelectorAll(".kb-row:first-child .vk-btn[data-action]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      handleVirtualAction(btn.getAttribute("data-action"));
-    });
+  // Bind Row 1 (Numbers, symbols, pairs, backspace)
+  document.querySelectorAll(".kb-row:first-child .vk-btn").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => e.preventDefault());
+    btn.addEventListener("mousedown", (e) => e.preventDefault());
+
+    if (btn.hasAttribute("data-key")) {
+      btn.addEventListener("click", () => {
+        const char = btn.getAttribute("data-key");
+        insertTextIntoEditor(char);
+      });
+    } else if (btn.hasAttribute("data-action")) {
+      btn.addEventListener("click", () => {
+        handleVirtualAction(btn.getAttribute("data-action"));
+      });
+    }
   });
 
   // Render Rows 2, 3, 4 dynamically according to layout
@@ -757,21 +836,14 @@ function setupVirtualKeyboard() {
 }
 
 function setShiftActive(active) {
-  isShiftActive = active;
-  const btn = document.getElementById("vk-shift-btn");
-  if (btn) btn.classList.toggle("active", active);
-  document.querySelectorAll(".vk-btn[data-key]").forEach(b => {
-    const k = b.getAttribute("data-key");
-    if (k && k.length === 1 && k.toLowerCase() !== k.toUpperCase()) {
-      b.textContent = active ? k.toUpperCase() : k.toLowerCase();
-    }
-  });
+  setShiftState(active ? 1 : 0);
 }
 
 function setCtrlActive(active) {
   isCtrlActive = active;
   const btn = document.getElementById("vk-ctrl-btn");
   if (btn) btn.classList.toggle("active", active);
+  if (editor && editor.focus) editor.focus();
 }
 
 function handleCtrlShortcut(key) {
@@ -786,15 +858,24 @@ function handleCtrlShortcut(key) {
   }
   else if (key === "c") { document.getElementById("btn-copy-sel").click(); }
   else if (key === "v") { document.getElementById("btn-paste-sel").click(); }
+  if (editor.focus) editor.focus();
 }
 
 function handleVirtualAction(action) {
   if (action === "toggle_lang") {
     toggleVirtualKeyboardLayout();
+    if (editor && editor.focus) editor.focus();
     return;
   }
   if (!editor) return;
-  if (action === "backspace") {
+
+  if (action === "shift") {
+    handleShiftTap();
+    return;
+  } else if (action === "ctrl") {
+    setCtrlActive(!isCtrlActive);
+    return;
+  } else if (action === "backspace") {
     handleBackspace(editor);
   } else if (action === "enter") {
     if (typeof CodeMirror !== "undefined" && editor instanceof CodeMirror) {
@@ -806,10 +887,6 @@ function handleVirtualAction(action) {
     insertTextIntoEditor("    ");
   } else if (action === "space") {
     insertTextIntoEditor(" ");
-  } else if (action === "shift") {
-    setShiftActive(!isShiftActive);
-  } else if (action === "ctrl") {
-    setCtrlActive(!isCtrlActive);
   } else if (action === "left") {
     if (editor.getCursor && editor.setCursor) {
       const c = editor.getCursor();
@@ -839,6 +916,8 @@ function handleVirtualAction(action) {
     const pairMap = { pair_paren: "()", pair_brack: "[]", pair_brace: "{}", pair_dquote: '""', pair_squote: "''" };
     insertPair(pairMap[action]);
   }
+
+  if (editor.focus) editor.focus();
 }
 
 function insertTextIntoEditor(text) {
@@ -863,28 +942,72 @@ function insertPair(pair) {
 }
 
 function handleBackspace(cm) {
+  if (!cm) return;
+
+  // 1. If text is selected, delete selection
   if (cm.somethingSelected && cm.somethingSelected()) {
     cm.replaceSelection("");
+    if (cm.focus) cm.focus();
     return;
   }
-  const cur = cm.getCursor();
-  if (cur.ch === 0 && cur.line > 0) {
-    const prevLine = cm.getLine(cur.line - 1);
-    const prevLen = prevLine.length;
-    cm.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
-    cm.setCursor({ line: cur.line - 1, ch: prevLen });
-  } else {
-    if (typeof CodeMirror !== "undefined" && cm instanceof CodeMirror) {
-      CodeMirror.commands.delCharBefore(cm);
-    } else {
-      const el = document.getElementById("code-editor-fallback");
-      const s = el.selectionStart;
-      if (s > 0) {
-        el.value = el.value.substring(0, s - 1) + el.value.substring(s);
+
+  // 2. Fallback textarea check
+  if (typeof CodeMirror === "undefined" || !(cm instanceof CodeMirror)) {
+    const el = document.getElementById("code-editor-fallback");
+    if (!el) return;
+    const s = el.selectionStart;
+    if (s > 0) {
+      const val = el.value;
+      const lastNl = val.lastIndexOf("\n", s - 1);
+      const lineStart = lastNl === -1 ? 0 : lastNl + 1;
+      const textBeforeOnLine = val.substring(lineStart, s);
+      if (/^[ ]+$/.test(textBeforeOnLine)) {
+        const col = textBeforeOnLine.length;
+        const toDelete = (col % 4 === 0) ? 4 : (col % 4);
+        el.value = val.substring(0, s - toDelete) + val.substring(s);
+        el.selectionStart = el.selectionEnd = s - toDelete;
+      } else {
+        el.value = val.substring(0, s - 1) + val.substring(s);
         el.selectionStart = el.selectionEnd = s - 1;
       }
     }
+    el.focus();
+    return;
   }
+
+  // 3. CodeMirror instance
+  const cur = cm.getCursor();
+  const lineText = cm.getLine(cur.line);
+
+  // If at start of line and not first line, join with previous line
+  if (cur.ch === 0) {
+    if (cur.line > 0) {
+      const prevLine = cm.getLine(cur.line - 1);
+      const prevLen = prevLine.length;
+      cm.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
+      cm.setCursor({ line: cur.line - 1, ch: prevLen });
+    }
+    if (cm.focus) cm.focus();
+    return;
+  }
+
+  // Check text before cursor on current line
+  const textBefore = lineText.substring(0, cur.ch);
+
+  // Smart Backspace / Dedent:
+  // If text before cursor consists only of spaces (indentation), remove spaces quantized to indentUnit (4)
+  if (/^[ ]+$/.test(textBefore)) {
+    const col = cur.ch;
+    const spacesToDelete = (col % 4 === 0) ? 4 : (col % 4);
+    const fromCh = Math.max(0, col - spacesToDelete);
+    cm.replaceRange("", { line: cur.line, ch: fromCh }, { line: cur.line, ch: col });
+    cm.setCursor({ line: cur.line, ch: fromCh });
+  } else {
+    // Normal single character deletion
+    CodeMirror.commands.delCharBefore(cm);
+  }
+
+  if (cm.focus) cm.focus();
 }
 
 // --- 9. EDITOR INITIALIZATION ---
@@ -944,6 +1067,7 @@ function upgradeToCodeMirror() {
       indentUnit: 4,
       indentWithTabs: false,
       lineWrapping: false,
+      cursorBlinkRate: 530,
       gutters: ["CodeMirror-linenumbers"],
       extraKeys: {
         "Backspace": (cm) => handleBackspace(cm),
@@ -960,19 +1084,8 @@ function upgradeToCodeMirror() {
       input.setAttribute("inputmode", "none");
       input.addEventListener("beforeinput", (e) => {
         if (e.inputType === "deleteContentBackward") {
-          if (cmInstance.somethingSelected()) {
-            e.preventDefault();
-            cmInstance.replaceSelection("");
-            return;
-          }
-          const cur = cmInstance.getCursor();
-          if (cur.ch === 0 && cur.line > 0) {
-            e.preventDefault();
-            const prevLine = cmInstance.getLine(cur.line - 1);
-            const prevLen = prevLine.length;
-            cmInstance.replaceRange("", { line: cur.line - 1, ch: prevLen }, { line: cur.line, ch: 0 });
-            cmInstance.setCursor({ line: cur.line - 1, ch: prevLen });
-          }
+          e.preventDefault();
+          handleBackspace(cmInstance);
         }
       });
     }
@@ -1531,7 +1644,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-select-all").addEventListener("click", () => {
     if (editor && editor.setSelection && editor.lineCount) {
       editor.setSelection({ line: 0, ch: 0 }, { line: editor.lineCount(), ch: 0 });
-      editor.focus();
+      if (editor.focus) editor.focus();
     }
   });
 
@@ -1542,6 +1655,7 @@ window.addEventListener("DOMContentLoaded", () => {
       navigator.clipboard.writeText(text);
       appendOutputText("[Copied to clipboard]\n", "info");
     }
+    if (editor.focus) editor.focus();
   });
 
   document.getElementById("btn-paste-sel").addEventListener("click", async () => {
@@ -1552,6 +1666,7 @@ window.addEventListener("DOMContentLoaded", () => {
         if (clipText) editor.replaceSelection(clipText);
       }
     } catch (_) {}
+    if (editor.focus) editor.focus();
   });
 
   // Settings Modal
@@ -1683,6 +1798,17 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // Quick accessory bar keys
+  const accBar = document.getElementById("mobile-accessory-bar");
+  if (accBar) {
+    accBar.addEventListener("pointerdown", (e) => e.preventDefault());
+    accBar.addEventListener("mousedown", (e) => e.preventDefault());
+  }
+
+  document.querySelectorAll(".acc-key, #mobile-accessory-bar button").forEach(btn => {
+    btn.addEventListener("pointerdown", (e) => e.preventDefault());
+    btn.addEventListener("mousedown", (e) => e.preventDefault());
+  });
+
   document.querySelectorAll(".acc-key[data-insert]").forEach(btn => {
     btn.addEventListener("click", () => insertTextIntoEditor(btn.getAttribute("data-insert")));
   });
