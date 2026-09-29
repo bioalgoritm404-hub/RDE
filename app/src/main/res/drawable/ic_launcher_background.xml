@@ -5,6 +5,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Deep Dark Premium Background (#121212 / #1e1e1e) -->
     <path
         android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
@@ -14,19 +15,33 @@
                 android:endX="108"
                 android:endY="108"
                 android:type="linear">
-                <item android:color="#141824" android:offset="0.0" />
-                <item android:color="#1e1e1e" android:offset="0.5" />
-                <item android:color="#0e1726" android:offset="1.0" />
+                <item android:color="#0d0d0e" android:offset="0.0" />
+                <item android:color="#18181b" android:offset="0.5" />
+                <item android:color="#121212" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
-    <!-- Subtle subtle blueprint grid lines -->
+
+    <!-- Subtle Radial Amber Glow in Center -->
     <path
-        android:pathData="M27,0 L27,108 M54,0 L54,108 M81,0 L81,108 M0,27 L108,27 M0,54 L108,54 M0,81 L108,81"
-        android:strokeColor="#183858"
-        android:strokeWidth="0.75" />
+        android:pathData="M54,54 m-44,0 a44,44 0 1,0 88,0 a44,44 0 1,0 -88,0">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="54"
+                android:startY="54"
+                android:endX="98"
+                android:endY="98"
+                android:gradientRadius="44"
+                android:type="radial">
+                <item android:color="#24FF6600" android:offset="0.0" />
+                <item android:color="#00121212" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle Technical Hex Grid Ring -->
     <path
-        android:pathData="M54,54 m-38,0 a38,38 0 1,0 76,0 a38,38 0 1,0 -76,0"
-        android:strokeColor="#20007acc"
-        android:strokeWidth="1.5" />
+        android:pathData="M54,23 L79,37 L79,67 L54,81 L29,67 L29,37 Z"
+        android:strokeColor="#18FF6600"
+        android:strokeWidth="1.0" />
 </vector>
